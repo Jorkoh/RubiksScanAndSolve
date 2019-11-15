@@ -1,0 +1,4 @@
+include ':app'
+rootProject.name='RubiksScanAndSolve'
+include ':opencv'
+project(':opencv').projectDir = new File(opencvsdk + '/sdk')
