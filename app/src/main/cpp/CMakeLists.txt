@@ -15,8 +15,7 @@ set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${OpenCV_DIR}/libs
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
-include_directories(include)
-file(GLOB_RECURSE cpp_srcs FOLLOW_SYMLINKS  "*.cpp")
+file(GLOB_RECURSE cpp_srcs  "*")
 add_library( # Sets the name of the library.
         native-lib
 
