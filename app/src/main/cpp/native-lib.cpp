@@ -10,7 +10,7 @@ using namespace cv;
 
 extern "C" {
 void JNICALL
-Java_com_jorkoh_rubiksscanandsolve_MainActivity_adaptiveThresholdFromJNI(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_rubikdetector_MainActivity_adaptiveThresholdFromJNI(JNIEnv *env,
                                                                          jobject instance,
                                                                          jlong matAddr) {
 

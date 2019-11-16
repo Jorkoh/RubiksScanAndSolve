@@ -102,8 +102,6 @@ class ScanFragment : Fragment() {
 
         imageAnalyzer = ImageAnalysis(analyzerConfig).apply {
             setAnalyzer(Executors.newCachedThreadPool(), TestAnalyzer { luma, fps ->
-                // Values returned from our analyzer are passed to the attached listener
-                // We log image analysis results here -- you should do something useful instead!
                 Log.d("RESULTS", "Average luminosity: $luma." + " Frames per second: ${"%.01f".format(fps)}")
             })
         }
