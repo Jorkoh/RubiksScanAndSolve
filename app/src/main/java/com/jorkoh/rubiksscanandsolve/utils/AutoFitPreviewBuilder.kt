@@ -97,6 +97,8 @@ class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinde
         val bufferWidth = bufferDimens.width.toFloat()
         val bufferHeight = bufferDimens.height.toFloat()
 
+        Log.d("RESULTS", "Transform image width: ${bufferDimens.width}, transform image height ${bufferDimens.height}")
+
         val viewFinderWidth = viewFinderDimens.width.toFloat()
         val viewFinderHeight = viewFinderDimens.height.toFloat()
 

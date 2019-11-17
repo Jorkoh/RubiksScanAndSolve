@@ -29,7 +29,11 @@ bool ImageSaver::saveImage(const cv::Mat &mat,
     std::stringstream frameNrStringStream;
     frameNrStringStream << frameNumber;
     std::string store_path = path + "/pic_" + frameNrStringStream.str() + "_" + regionName + ".jpg";
-    return cv::imwrite(store_path, mat);
+    bool writeResult = cv::imwrite(store_path, mat);
+    if (debuggable) {
+        LOG_DEBUG("RubikJniPart.cpp", writeResult ? "Saved image" : "Couldn't save image");
+    }
+    return writeResult;
 }
 
 void ImageSaver::setDebuggable(const bool debuggable) {

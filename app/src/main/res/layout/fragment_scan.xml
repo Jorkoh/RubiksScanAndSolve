@@ -19,7 +19,7 @@
         app:layout_constraintTop_toBottomOf="@id/guideline_top_preview">
 
         <View
-            android:id="@+id/image_view"
+            android:id="@+id/view_finder_overlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@drawable/view_finder_overlay_vector" />
@@ -30,6 +30,16 @@
             android:layout_height="wrap_content" />
 
     </androidx.cardview.widget.CardView>
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/result_image"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        android:layout_marginTop="10dp"
+        app:layout_constraintEnd_toStartOf="@id/guideline_end_preview"
+        app:layout_constraintStart_toEndOf="@id/guideline_start_preview"
+        app:layout_constraintTop_toBottomOf="@id/card_preview"/>
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_top_preview"

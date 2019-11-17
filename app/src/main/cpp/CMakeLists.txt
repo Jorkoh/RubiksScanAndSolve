@@ -16,14 +16,7 @@ set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${OpenCV_DIR}/libs
 # Gradle automatically packages shared libraries with your APK.
 
 file(GLOB_RECURSE cpp_srcs  "*")
-add_library( # Sets the name of the library.
-        native-lib
-
-        # Sets the library as a shared library.
-        SHARED
-
-        # Provides a relative path to your source file(s).
-        ${cpp_srcs})
+add_library(rubikdetector_native SHARED ${cpp_srcs})
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -43,7 +36,7 @@ find_library( # Sets the name of the path variable.
 # build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
-        native-lib
+        rubikdetector_native
 
         # OpenCV
         lib_opencv

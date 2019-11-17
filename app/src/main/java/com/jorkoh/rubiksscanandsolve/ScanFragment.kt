@@ -3,22 +3,22 @@ package com.jorkoh.rubiksscanandsolve
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
+import android.graphics.PorterDuff
 import android.hardware.display.DisplayManager
 import android.os.Bundle
-import android.util.DisplayMetrics
-import android.util.Log
-import android.util.Rational
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.*
+import androidx.fragment.app.Fragment
 import com.jorkoh.rubiksscanandsolve.utils.AutoFitPreviewBuilder
 import kotlinx.android.synthetic.main.fragment_scan.*
 import permissions.dispatcher.*
 import java.util.concurrent.Executors
+
 
 @RuntimePermissions
 class ScanFragment : Fragment() {
@@ -75,7 +75,7 @@ class ScanFragment : Fragment() {
     }
 
     @SuppressLint("RestrictedApi")
-    @NeedsPermission(Manifest.permission.CAMERA)
+    @NeedsPermission(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
     fun enableScanner() {
         // Set up the view finder use case to display camera preview
         val viewFinderConfig = PreviewConfig.Builder().apply {
@@ -93,6 +93,8 @@ class ScanFragment : Fragment() {
         // Setup image analysis pipeline that computes average pixel luminance in real time
         val analyzerConfig = ImageAnalysisConfig.Builder().apply {
             setLensFacing(CameraX.LensFacing.BACK)
+            // We request aspect ratio but no resolution to let CameraX optimize our use cases
+            setTargetAspectRatio(AspectRatio.RATIO_4_3)
             // In our analysis, we care more about the latest image than analyzing *every* image
             setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
             // Set initial target rotation, we will have to call this again if rotation changes
@@ -101,9 +103,24 @@ class ScanFragment : Fragment() {
         }.build()
 
         imageAnalyzer = ImageAnalysis(analyzerConfig).apply {
-            setAnalyzer(Executors.newCachedThreadPool(), TestAnalyzer { luma, fps ->
-                Log.d("RESULTS", "Average luminosity: $luma." + " Frames per second: ${"%.01f".format(fps)}")
-            })
+            setAnalyzer(
+                Executors.newCachedThreadPool(),
+                CubeDetectorAnalyzer { detected, imageWithDetection ->
+                    view_finder_overlay.post {
+                        view_finder_overlay.background.setColorFilter(
+                            if (detected) {
+                                Color.GREEN
+                            } else {
+                                Color.RED
+                            },
+                            PorterDuff.Mode.SRC_ATOP
+                        )
+                        if (detected) {
+                            result_image.setImageBitmap(imageWithDetection)
+                        }
+                    }
+                }
+            )
         }
 
         // Apply declared configs to CameraX using the same lifecycle owner
@@ -116,7 +133,7 @@ class ScanFragment : Fragment() {
         displayManager.unregisterDisplayListener(displayListener)
     }
 
-    @OnShowRationale(Manifest.permission.CAMERA)
+    @OnShowRationale(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
     fun showRationaleForCamera(request: PermissionRequest) {
         AlertDialog.Builder(requireContext())
             .setPositiveButton("positive") { _, _ -> request.proceed() }
@@ -126,12 +143,12 @@ class ScanFragment : Fragment() {
             .show()
     }
 
-    @OnPermissionDenied(Manifest.permission.CAMERA)
+    @OnPermissionDenied(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
     fun onCameraDenied() {
         Toast.makeText(requireContext(), "permission has been denied", Toast.LENGTH_LONG).show()
     }
 
-    @OnNeverAskAgain(Manifest.permission.CAMERA)
+    @OnNeverAskAgain(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
     fun onCameraNeverAskAgain() {
         Toast.makeText(requireContext(), "never ask again", Toast.LENGTH_LONG).show()
     }
