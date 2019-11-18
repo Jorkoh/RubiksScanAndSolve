@@ -1,9 +1,10 @@
 package com.jorkoh.rubiksscanandsolve.rubikdetector;
 
+import android.util.Log;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.Log;
 
 import com.jorkoh.rubiksscanandsolve.rubikdetector.config.DrawConfig;
 import com.jorkoh.rubiksscanandsolve.rubikdetector.model.Point2d;
@@ -229,7 +230,7 @@ public class RubikDetector {
      * @param properties updated {@link ImageProperties}
      */
     public void updateImageProperties(ImageProperties properties) {
-        applyImageProperties(properties.width, properties.height, properties.inputImageFormat);
+        applyImageProperties(properties.rotationDegrees, properties.width, properties.height, properties.inputImageFormat);
     }
 
     /**
@@ -246,12 +247,13 @@ public class RubikDetector {
      * Following this call, make sure {@link #findCube(byte[])}(or {@link #findCube(ByteBuffer)} is not called with a buffer allocated for the previously
      * set properties.
      *
+     * @param rotation    rotation of the new input frame, in degrees
      * @param width       width of the new input & output frames, in pixels
      * @param height      height of the new input & output frames, in pixels
      * @param imageFormat width of the new input & output frames, in pixels
      */
-    public void updateImageProperties(int width, int height, @ImageFormat int imageFormat) {
-        applyImageProperties(width, height, imageFormat);
+    public void updateImageProperties(int rotation, int width, int height, @ImageFormat int imageFormat) {
+        applyImageProperties(rotation, width, height, imageFormat);
     }
 
     /**
@@ -403,7 +405,7 @@ public class RubikDetector {
     /**
      * Returns the required memory capacity of the byte array or {@link ByteBuffer} passed to one of the {@code findCube(...)} methods.
      * <p>
-     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int)}
+     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int, int)}
      *
      * @return a integer representing the required memory when searching for a cube, in a given frame.
      * @see RubikDetector
@@ -418,7 +420,7 @@ public class RubikDetector {
      * Given a byte array which contains, among others, the data for the input image (on which detection will be performed),
      * this returns the offset at which the input image data is stored within that byte array.
      * <p>
-     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int)}
+     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int, int)}
      *
      * @return the offset, in bytes, at which the input image data starts, within its byte array container.
      * @see RubikDetector
@@ -432,7 +434,7 @@ public class RubikDetector {
     /**
      * Gives the size of the input image data, in bytes.
      * <p>
-     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int)}
+     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int, int)}
      *
      * @return the size, in bytes, of the input image data.
      * @see RubikDetector
@@ -447,7 +449,7 @@ public class RubikDetector {
      * Given a byte array which contains, among others, the output image data, this returns the offset at which the output image data
      * is stored within that byte array.
      * <p>
-     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int)}
+     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int, int)}
      *
      * @return the offset, in bytes, at which the output image data starts, within its byte array container.
      * @see RubikDetector
@@ -461,7 +463,7 @@ public class RubikDetector {
     /**
      * Gives the size of the output image data, in bytes.
      * <p>
-     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int)}
+     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int, int)}
      *
      * @return the size, in bytes, of the output image data.
      * @see RubikDetector
@@ -527,7 +529,9 @@ public class RubikDetector {
      */
     private long createNativeDetector(ImageProperties properties, DrawConfig drawConfig, String storagePath) {
 
-        return nativeCreateRubikDetector(properties.width,
+        return nativeCreateRubikDetector(
+                properties.rotationDegrees,
+                properties.width,
                 properties.height,
                 properties.inputImageFormat,
                 drawConfig.getDrawMode(),
@@ -540,13 +544,14 @@ public class RubikDetector {
      * Applies the new image properties on the native detector, then updates the memory requirements known by this Java object,
      * with the new values of the native object.
      *
+     * @param rotation    new frame rotation, in degrees
      * @param width       new frame width, in pixels
      * @param height      new frame height, in pixels
      * @param imageFormat an {@link ImageFormat} representing the format in which the input frame data is represented.
      */
-    private void applyImageProperties(int width, int height, @ImageFormat int imageFormat) {
+    private void applyImageProperties(int rotation, int width, int height, @ImageFormat int imageFormat) {
         if (isActive()) {
-            nativeSetImageProperties(nativeProcessorRef, width, height, imageFormat);
+            nativeSetImageProperties(nativeProcessorRef, rotation, width, height, imageFormat);
             this.frameWidth = width;
             this.frameHeight = height;
             syncWithNativeObject();
@@ -616,7 +621,8 @@ public class RubikDetector {
      * @param storagePath      {@link String} representing an absolute path to a writable, persistent storage location.
      * @return a long which represents an identifier which can be later used to reference the native object created here.
      */
-    private native long nativeCreateRubikDetector(int frameWidth,
+    private native long nativeCreateRubikDetector(int rotationDegrees,
+                                                  int frameWidth,
                                                   int frameHeight,
                                                   @ImageFormat int inputImageFormat,
                                                   @DrawConfig.DrawMode int drawMode,
@@ -680,7 +686,7 @@ public class RubikDetector {
      * @param height             new height, in pixels
      * @param imageFormat        new image format, as a {@link ImageFormat}
      */
-    private native void nativeSetImageProperties(long nativeProcessorRef, int width, int height, @ImageFormat int imageFormat);
+    private native void nativeSetImageProperties(long nativeProcessorRef, int rotation, int width, int height, @ImageFormat int imageFormat);
 
     /**
      * Updates the active draw config on the native object.
@@ -789,6 +795,11 @@ public class RubikDetector {
     public static class ImageProperties {
 
         /**
+         * Rotation degrees of the input frame.
+         */
+        public final int rotationDegrees;
+
+        /**
          * Width of both the input & output frames, in pixels.
          */
         public final int width;
@@ -813,11 +824,13 @@ public class RubikDetector {
         /**
          * Creates a new immutable ImageProperties object with the properties mentioned in the parameters, and with the output frame format set to {@link RubikDetector.ImageFormat#ARGB_8888}.
          *
+         * @param rotationDegrees  input rotation in degrees
          * @param width            input & output frame width, in pixels
          * @param height           input & output frame width, in pixels
          * @param inputImageFormat - the format of the input frame, as a {@link RubikDetector.ImageFormat}.
          */
-        public ImageProperties(int width, int height, @ImageFormat int inputImageFormat) {
+        public ImageProperties(int rotationDegrees, int width, int height, @ImageFormat int inputImageFormat) {
+            this.rotationDegrees = rotationDegrees;
             this.width = width;
             this.height = height;
             this.inputImageFormat = inputImageFormat;
@@ -847,8 +860,27 @@ public class RubikDetector {
         private String imageSavePath = null;
         private int inputFrameWidth = 320;
         private int inputFrameHeight = 240;
+        private int rotationDegrees = 0;
         @ImageFormat
         private int inputFrameFormat = ImageFormat.YUV_NV21;
+
+        // #Added
+
+        /**
+         * <p>
+         * Set the rotation of the input frame.
+         * </p>
+         * <p>
+         * This can later be changed through RubikProcessor::updateImageProperties().
+         * </p>
+         *
+         * @param rotationDegrees in degrees
+         * @return this {@link RubikDetector.Builder} instance to allow chaining.
+         */
+        public Builder inputFrameRotation(int rotationDegrees) {
+            this.rotationDegrees = rotationDegrees;
+            return this;
+        }
 
         /**
          * <p>
@@ -936,7 +968,7 @@ public class RubikDetector {
          * @see RubikDetector.Builder
          */
         public RubikDetector build() {
-            ImageProperties imageProperties = new ImageProperties(inputFrameWidth, inputFrameHeight, inputFrameFormat);
+            ImageProperties imageProperties = new ImageProperties(rotationDegrees, inputFrameWidth, inputFrameHeight, inputFrameFormat);
             if (drawConfig == null) {
                 drawConfig = DrawConfig.Default();
             }

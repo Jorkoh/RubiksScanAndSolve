@@ -127,6 +127,28 @@ namespace rbdt {
         std::vector<std::vector<RubikFacelet::Color>> detectFacetColors(const cv::Mat &currentFrame,
                                                                         const std::vector<std::vector<RubikFacelet>> facetModel);
 
+        // #Added
+        /**
+         *
+         * @param inputImage
+         * @param outputImage
+         * @param inputPoints
+         * @param outputSize
+         */
+        void rotateMat(cv::Mat &matImage, int rotFlag);
+        // #EndAdded
+
+        // #Added
+        /**
+         *
+         * @param inputImage
+         * @param outputImage
+         * @param inputPoints
+         * @param outputSize
+         */
+        void applyPerspectiveTransform(const cv::Mat& inputFrame, cv::Mat& outputFrame, const std::vector<cv::Point2f>& inputPoints, const cv::Size &outputSize);
+        // #EndAdded
+
         /**
          * Applies the colors in the color array, to the facelets in the facelets array.
          *
@@ -210,6 +232,21 @@ namespace rbdt {
          * input & output frame width
          */
         int imageWidth;
+
+        /**
+         * input & output frame height after rotation
+         */
+        int rotatedImageHeight;
+
+        /**
+         * input & output frame width after rotation
+         */
+        int rotatedImageWidth;
+
+        /**
+         * input frame rotation in degrees
+         */
+        int rotation;
 
         /**
          * total required length in bytes of the input array passed to RubikProcessor::process()

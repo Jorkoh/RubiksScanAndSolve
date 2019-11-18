@@ -2,6 +2,7 @@ package com.jorkoh.rubiksscanandsolve
 
 import android.graphics.Bitmap
 import android.graphics.ImageFormat
+import android.os.Environment
 import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -22,7 +23,8 @@ class CubeDetectorAnalyzer(listener: DetectorListener? = null) : ImageAnalysis.A
 
     // TODO this stuff should be initialized once we know the size of the images
     private val rubikDetector: RubikDetector = RubikDetector.Builder()
-        // the input image will have a resolution of 1080x1920
+        .inputFrameRotation(90)
+        // the input image will have a resolution of 640x480
         .inputFrameSize(640, 480)
         // the input image data will be stored in the YUV NV21 format
         .inputFrameFormat(RubikDetectorUtils.convertAndroidImageFormat(ImageFormat.NV21))
@@ -31,7 +33,7 @@ class CubeDetectorAnalyzer(listener: DetectorListener? = null) : ImageAnalysis.A
         // mark as debuggable
         .debuggable(true)
         // save images of the process
-        // .imageSavePath("${Environment.getExternalStorageDirectory()}")
+        .imageSavePath("${Environment.getExternalStorageDirectory()}/Rubik/")
         // builds the RubikDetector for the given params.
         .build()
     // allocate a ByteBuffer of the capacity required by the RubikDetector
@@ -44,16 +46,15 @@ class CubeDetectorAnalyzer(listener: DetectorListener? = null) : ImageAnalysis.A
     private val drawingBitmap = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888)
 
     override fun analyze(image: ImageProxy, rotationDegrees: Int) {
-
-
         // If there are no listeners attached, we don't need to perform analysis
         if (listeners.isEmpty()) return
 
         // Try to detect no more often that every quarter of a second
         val currentTimestamp = System.currentTimeMillis()
-        if (currentTimestamp - lastAnalyzedTimestamp >= 250) {
+        if (currentTimestamp - lastAnalyzedTimestamp >= 5000) {
             lastAnalyzedTimestamp = currentTimestamp
 
+            Log.d("RESULTS", "Analyzer image rotation degrees: $rotationDegrees")
             Log.d("RESULTS", "Analyzer image width: ${image.width}, analyzer image height ${image.height}")
 
             // Couldn't make YUV_420_888 work with native so let's use NV21

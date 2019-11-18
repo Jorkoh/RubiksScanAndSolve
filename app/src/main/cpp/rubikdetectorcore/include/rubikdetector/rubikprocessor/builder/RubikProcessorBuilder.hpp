@@ -53,6 +53,16 @@ namespace rbdt {
         RubikProcessorBuilder();
 
         /**
+        * Set the rotation of the input frame.
+        *
+        * This can later be changed through RubikProcessor::updateImageProperties().
+        *
+        * @param [in] rotation in degrees
+        * @return the same RubikProcessorBuilder instance
+        */
+        RubikProcessorBuilder &rotation(int rotation);
+
+        /**
          * Set the resolution of the input & output frames.
          *
          * This can later be changed through RubikProcessor::updateImageProperties().
@@ -135,11 +145,15 @@ namespace rbdt {
 
     private:
 
+        static constexpr int DEFAULT_ROTATION = 0;
+
         static constexpr int DEFAULT_WIDTH = 320;
 
         static constexpr int DEFAULT_HEIGHT = 240;
 
         static constexpr RubikProcessor::ImageFormat DEFAULT_FRAME_FORMAT = RubikProcessor::ImageFormat::YUV_NV21;
+
+        int mRotation;
 
         int mFrameWidth;
 

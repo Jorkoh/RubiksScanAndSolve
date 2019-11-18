@@ -135,36 +135,51 @@ namespace rbdt {
                 cvColorConversionCode = RubikProcessorImpl::NO_CONVERSION_NEEDED;
                 break;
         }
+        rotation = properties.rotation;
         imageWidth = properties.width;
         imageHeight = properties.height;
-        largestDimension = imageWidth > imageHeight ? imageWidth : imageHeight;
+        // Rotated stuff
+        if (rotation == -90 || rotation == 90 || rotation == 270) {
+            rotatedImageHeight = imageWidth;
+            rotatedImageWidth = imageHeight;
+        }else{
+            rotatedImageHeight = imageHeight;
+            rotatedImageWidth = imageWidth;
+        }
+
+        // Largest side of original image
+        largestDimension = rotatedImageWidth > rotatedImageHeight ? rotatedImageWidth : rotatedImageHeight;
         if (largestDimension > DEFAULT_DIMENSION) {
+            // Frame larger than expected, needs downscaling
             upscalingRatio = (float) largestDimension / DEFAULT_DIMENSION;
             downscalingRatio = (float) DEFAULT_DIMENSION / largestDimension;
-            if (largestDimension == imageHeight) {
-                processingWidth = (int) round(imageHeight * downscalingRatio *
-                                              ((float) imageWidth / imageHeight));
-                processingHeight = (int) round(imageHeight * downscalingRatio);
+            if (largestDimension == rotatedImageHeight) {
+                // Height is the largest side
+                processingWidth = (int) round(rotatedImageHeight * downscalingRatio * ((float) rotatedImageWidth / rotatedImageHeight));
+                processingHeight = (int) round(rotatedImageHeight * downscalingRatio);
             } else {
-                processingWidth = (int) round(imageWidth * downscalingRatio);
-                processingHeight = (int) round(imageWidth * downscalingRatio *
-                                               ((float) imageHeight / imageWidth));
+                // Width is the largest side
+                processingWidth = (int) round(rotatedImageWidth * downscalingRatio);
+                processingHeight = (int) round(rotatedImageWidth * downscalingRatio * ((float) rotatedImageHeight / rotatedImageWidth));
             }
         } else if (largestDimension < DEFAULT_DIMENSION) {
+            // Frame smaller than expected, processing dimensions will be 320x240 or 240x320
             upscalingRatio = 1.0f;
             downscalingRatio = 1.0f;
-            processingHeight = largestDimension == imageHeight ? 320 : 240;
-            processingWidth = largestDimension == imageWidth ? 320 : 240;
+            processingHeight = largestDimension == rotatedImageHeight ? 320 : 240;
+            processingWidth = largestDimension == rotatedImageWidth ? 320 : 240;
         } else {
             upscalingRatio = 1.0f;
             downscalingRatio = 1.0f;
-            processingHeight = imageHeight;
-            processingWidth = imageWidth;
+            processingHeight = rotatedImageHeight;
+            processingWidth = rotatedImageWidth;
         }
-        needsResize = imageHeight != processingHeight || imageWidth != processingWidth;
+        needsResize = rotatedImageHeight != processingHeight || rotatedImageWidth != processingWidth;
 
+        // Calculate offsets
         if (inputImageFormat != RubikProcessor::ImageFormat::RGBA8888) {
-            //image is in one of the supported YUV formats
+            // image is in one of the supported YUV formats
+            // IMPORTANT, when calculating offsets of YUV don't use rotated values because rotation will only happen after RGBA transformation
             outputRgbaImageByteCount = imageWidth * imageHeight * 4;
             outputRgbaImageOffset = imageWidth * (imageHeight + imageHeight / 2);
             inputImageByteCount = imageWidth * (imageHeight + imageHeight / 2);
@@ -173,17 +188,16 @@ namespace rbdt {
             if (needsResize) {
                 processingRgbaImageOffset = outputRgbaImageByteCount + inputImageByteCount;
                 processingRgbaImageByteCount = processingHeight * processingWidth * 4;
-                processingGrayImageOffset =
-                        outputRgbaImageByteCount + inputImageByteCount +
-                        processingRgbaImageByteCount;
+                processingGrayImageOffset = outputRgbaImageByteCount + inputImageByteCount + processingRgbaImageByteCount;
                 processingGrayImageSize = processingHeight * processingWidth;
 
-                totalRequiredMemory = outputRgbaImageByteCount + inputImageByteCount +
-                                      processingGrayImageSize + processingRgbaImageByteCount;
+                totalRequiredMemory = outputRgbaImageByteCount + inputImageByteCount + processingGrayImageSize
+                                      + processingRgbaImageByteCount;
             } else {
                 totalRequiredMemory = outputRgbaImageByteCount + inputImageByteCount;
             }
         } else {
+            // image is RGBA
             inputImageByteCount = outputRgbaImageByteCount = imageWidth * imageHeight * 4;
             inputImageOffset = outputRgbaImageOffset = RubikProcessorImpl::NO_OFFSET;
 
@@ -193,89 +207,119 @@ namespace rbdt {
                 processingGrayImageOffset = outputRgbaImageByteCount + processingRgbaImageByteCount;
                 processingGrayImageSize = processingHeight * processingWidth;
 
-                totalRequiredMemory =
-                        outputRgbaImageByteCount + processingRgbaImageByteCount +
-                        processingGrayImageSize;
+                totalRequiredMemory = outputRgbaImageByteCount + processingRgbaImageByteCount + processingGrayImageSize;
             } else {
                 processingGrayImageSize = processingHeight * processingWidth;
                 processingGrayImageOffset = outputRgbaImageByteCount;
+
                 totalRequiredMemory = outputRgbaImageByteCount + processingGrayImageSize;
             }
         }
         faceletsDetector->onFrameSizeSelected(processingWidth, processingHeight);
     }
 
-    std::vector<std::vector<RubikFacelet>> RubikProcessorImpl::findCubeInternal(
-            const uint8_t *imageData) {
+    std::vector<std::vector<RubikFacelet>> RubikProcessorImpl::findCubeInternal(const uint8_t *imageData) {
         double processingStart = 0;
 
         if (debuggable) {
-//            only calculate frame rate if the processor is debuggable
+            // only calculate frame rate if the processor is debuggable
             frameNumber++;
             processingStart = rbdt::getCurrentTimeMillis();
         }
 
-        cv::Mat outputFrameRgba(imageHeight, imageWidth, CV_8UC4,
-                                (uchar *) imageData + outputRgbaImageOffset);
+        // Allocate the output mat
+        cv::Mat outputFrameRgba(rotatedImageHeight, rotatedImageHeight, CV_8UC4, (uchar *) imageData + outputRgbaImageOffset);
 
+        // IMPORTANT, processing color frames are in RGBA, if saved directly to disk through ImageSaver colors channels
+        // will be mixed because it expects BGR, convert with CV_RGB2BGR before saving
         cv::Mat processingFrameRgba;
         cv::Mat processingFrameGrey;
 
         if (inputImageFormat != RubikProcessor::ImageFormat::RGBA8888) {
-            //YUV image, need to convert the output & processing frames to RGBA8888
-
+            // YUV image, need to convert the output & processing frames to RGBA8888
             if (debuggable) {
                 LOG_DEBUG("NativeRubikProcessor", "Frame not RGB, needs conversion to RGBA.");
             }
 
-            cv::Mat frameYuv(imageHeight + imageHeight / 2, imageWidth, CV_8UC1,
-                             (uchar *) imageData);
-
+            // Create a Mat from the YUV data and transform it into RGBA
+            cv::Mat frameYuv(imageHeight + imageHeight / 2, imageWidth, CV_8UC1, (uchar *) imageData);
             cv::cvtColor(frameYuv, outputFrameRgba, cvColorConversionCode);
+
+            // #Added
+            imageSaver->saveImage(outputFrameRgba, frameNumber, "before rotation");
+            rotateMat(outputFrameRgba, rotation);
+            imageSaver->saveImage(outputFrameRgba, frameNumber, "after rotation");
 
             if (needsResize) {
                 if (debuggable) {
                     LOG_DEBUG("NativeRubikProcessor", "Resizing frame to processing size.");
+                    LOG_DEBUG("NativeRubikProcessor", "Image height: %d, width: %d. Processing height: %d, width: %d.",
+                              rotatedImageHeight, rotatedImageWidth, processingHeight, processingWidth);
                 }
-                processingFrameRgba = cv::Mat(processingHeight, processingWidth, CV_8UC4,
-                                              (uchar *) imageData + processingRgbaImageOffset);
-                processingFrameGrey = cv::Mat(processingHeight, processingWidth, CV_8UC1,
-                                              (uchar *) imageData + processingGrayImageOffset);
-                cv::resize(outputFrameRgba, processingFrameRgba,
-                           cv::Size(processingWidth, processingHeight));
+                // Allocate the processing mats
+                processingFrameRgba = cv::Mat(processingHeight, processingWidth, CV_8UC4, (uchar *) imageData + processingRgbaImageOffset);
+                processingFrameGrey = cv::Mat(processingHeight, processingWidth, CV_8UC1, (uchar *) imageData + processingGrayImageOffset);
+                // processing RGBA is obtained resizing output RGBA
+                cv::resize(outputFrameRgba, processingFrameRgba, cv::Size(processingWidth, processingHeight));
+                // Gray is obtained changing color space of the processing RGBA
                 cv::cvtColor(processingFrameRgba, processingFrameGrey, CV_RGBA2GRAY);
             } else {
                 if (debuggable) {
                     LOG_DEBUG("NativeRubikProcessor", "Frame already at processing size, no resize needed.");
                 }
+                // processing RGBA is just output RGBA
                 processingFrameRgba = cv::Mat(outputFrameRgba);
-                processingFrameGrey = frameYuv(cv::Rect(0, 0, imageWidth, imageHeight));
+                // Gray is obtained directly from the YUV
+                // TODO check if this rotated stuff works here
+                processingFrameGrey = frameYuv(cv::Rect(0, 0, rotatedImageWidth, rotatedImageHeight));
             }
 
         } else {
-            //input already in RGBA8888 format
-            processingFrameGrey = cv::Mat(processingHeight, processingWidth, CV_8UC1,
-                                          (uchar *) imageData + processingGrayImageOffset);
+            // input already in RGBA8888 format
             if (debuggable) {
                 LOG_DEBUG("NativeRubikProcessor", "###################ALREADY RGBA");
             }
+            // Allocate the processing grey mat
+            processingFrameGrey = cv::Mat(processingHeight, processingWidth, CV_8UC1, (uchar *) imageData + processingGrayImageOffset);
+
+            // #Added
+            imageSaver->saveImage(outputFrameRgba, frameNumber, "before rotation");
+            rotateMat(outputFrameRgba, rotation);
+            imageSaver->saveImage(outputFrameRgba, frameNumber, "after rotation");
 
             if (needsResize) {
                 if (debuggable) {
                     LOG_DEBUG("NativeRubikProcessor", "Needs resize.");
                 }
-                processingFrameRgba = cv::Mat(processingHeight, processingWidth, CV_8UC4,
-                                              (uchar *) imageData + processingRgbaImageOffset);
-                cv::resize(outputFrameRgba, processingFrameRgba,
-                           cv::Size(processingWidth, processingHeight));
+                // Allocate the processing RGBA mat
+                processingFrameRgba = cv::Mat(processingHeight, processingWidth, CV_8UC4, (uchar *) imageData + processingRgbaImageOffset);
+                // processing RGBA is obtained resizing output RGBA
+                cv::resize(outputFrameRgba, processingFrameRgba, cv::Size(processingWidth, processingHeight));
             } else {
                 if (debuggable) {
                     LOG_DEBUG("NativeRubikProcessor", "No resize.");
                 }
+                // processing RGBA is just output RGBA
                 processingFrameRgba = cv::Mat(outputFrameRgba);
             }
+
+            // Gray is obtained changing color space of the processing RGBA
             cv::cvtColor(processingFrameRgba, processingFrameGrey, CV_RGBA2GRAY);
         }
+//
+//        imageSaver->saveImage(processingFrameRgba, frameNumber, "before perspective test");
+//        float cornersHeight = static_cast<float>(tan(30 * CV_PI / 180) * processingWidth / 2.0f);
+//        std::vector<cv::Point2f> topFaceCorners;
+//        topFaceCorners.emplace_back(cv::Point2f(processingWidth, cornersHeight));
+//        topFaceCorners.emplace_back(cv::Point2f(processingWidth / 2.0f, processingHeight));
+//        topFaceCorners.emplace_back(cv::Point2f(0, cornersHeight));
+//        topFaceCorners.emplace_back(cv::Point2f(processingWidth / 2.0f, processingHeight / 2.0f));
+//        applyPerspectiveTransform(processingFrameRgba, processingFrameRgba, topFaceCorners,
+//                                  cv::Size(processingWidth, processingHeight));
+//        imageSaver->saveImage(processingFrameRgba, frameNumber, "after perspective test");
+        // #EndAdded
+
+
         if (isDebuggable()) {
             LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - Searching for facelets.");
         }
@@ -346,8 +390,7 @@ namespace rbdt {
     std::vector<std::vector<RubikFacelet::Color>> RubikProcessorImpl::detectFacetColors(
             const cv::Mat &currentFrame,
             const std::vector<std::vector<RubikFacelet>> facetModel) {
-        std::vector<std::vector<RubikFacelet::Color>> colors(3,
-                                                             std::vector<RubikFacelet::Color>(3));
+        std::vector<std::vector<RubikFacelet::Color>> colors(3, std::vector<RubikFacelet::Color>(3));
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 RubikFacelet faceletRect = facetModel[i][j];
@@ -390,6 +433,38 @@ namespace rbdt {
         }
         return colors;
     }
+
+    // #Added
+    void RubikProcessorImpl::rotateMat(cv::Mat &matImage, int rotFlag) {
+        if (rotFlag != 0 && rotFlag != 360) {
+            if (rotFlag == 90) {
+                cv::transpose(matImage, matImage);
+                cv::flip(matImage, matImage, 1);
+            } else if (rotFlag == 270 || rotFlag == -90) {
+                cv::transpose(matImage, matImage);
+                cv::flip(matImage, matImage, 0);
+            } else if (rotFlag == 180) {
+                cv::flip(matImage, matImage, -1);
+            }
+        }
+    }
+    // #EndAdded
+
+    // #Added
+    void RubikProcessorImpl::applyPerspectiveTransform(const cv::Mat &inputImage, cv::Mat &outputImage,
+                                                       const std::vector<cv::Point2f> &inputPoints,
+                                                       const cv::Size &outputSize) {
+        std::vector<cv::Point2f> outputPoints;
+        outputPoints.emplace_back(cv::Point2f(0, 0));
+        outputPoints.emplace_back(cv::Point2f(outputSize.width - 1, 0));
+        outputPoints.emplace_back(cv::Point2f(outputSize.width - 1, outputSize.height - 1));
+        outputPoints.emplace_back(cv::Point2f(0, outputSize.height - 1));
+
+        //Apply the perspective transformation
+        auto perspectiveMatrix = cv::getPerspectiveTransform(inputPoints, outputPoints);
+        cv::warpPerspective(inputImage, outputImage, perspectiveMatrix, outputSize);
+    }
+    // #EndAdded
 
     void RubikProcessorImpl::applyColorsToResult(std::vector<std::vector<RubikFacelet>> &facelets,
                                                  const std::vector<std::vector<RubikFacelet::Color>> colors) {

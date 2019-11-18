@@ -10,6 +10,7 @@
 namespace rbdt {
 
 RubikProcessorBuilder::RubikProcessorBuilder() :
+        mRotation(DEFAULT_ROTATION),
         mFrameWidth(DEFAULT_WIDTH),
         mFrameHeight(DEFAULT_HEIGHT),
         mFrameFormat(DEFAULT_FRAME_FORMAT),
@@ -18,6 +19,11 @@ RubikProcessorBuilder::RubikProcessorBuilder() :
         mFaceletsDetector(nullptr),
         mColorDetector(nullptr),
         mImageSaver(nullptr) {}
+
+    RubikProcessorBuilder &RubikProcessorBuilder::rotation(int rotation) {
+        mRotation = rotation;
+        return *this;
+    }
 
 RubikProcessorBuilder &RubikProcessorBuilder::inputFrameSize(int width, int height) {
     mFrameWidth = width;
@@ -75,7 +81,7 @@ RubikProcessor *RubikProcessorBuilder::build() {
             new FaceletsDrawController(mDrawConfig));
 
     RubikProcessor *rubikDetector = new RubikProcessor(
-            ImageProperties(mFrameWidth, mFrameHeight, mFrameFormat),
+            ImageProperties(mRotation, mFrameWidth, mFrameHeight, mFrameFormat),
             std::move(mFaceletsDetector),
             std::move(mColorDetector),
             std::move(faceletsDrawController),

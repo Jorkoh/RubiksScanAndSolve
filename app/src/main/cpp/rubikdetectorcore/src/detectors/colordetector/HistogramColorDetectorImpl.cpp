@@ -150,7 +150,9 @@ void HistogramColorDetectorImpl::printOwnHistogram(const int hist[], const int h
                  0);
         }
     }
-    imageSaver->saveImage(histImage, frameNumber, regionId);
+    std::stringstream regionIdStringStream;
+    regionIdStringStream << regionId << "_hist";
+    imageSaver->saveImage(histImage, frameNumber, regionIdStringStream.str());
 }
 
 void HistogramColorDetectorImpl::computeSaturationHistogram(const std::vector<cv::Mat> &hsvChannels,
