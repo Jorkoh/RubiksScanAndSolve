@@ -11,6 +11,10 @@ import androidx.camera.core.Preview
 import androidx.camera.core.PreviewConfig
 import java.lang.IllegalArgumentException
 import java.lang.ref.WeakReference
+import android.opengl.ETC1.getHeight
+import android.opengl.ETC1.getWidth
+
+
 
 
 class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinderRef: WeakReference<TextureView>) {
@@ -94,11 +98,10 @@ class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinde
             viewFinderDimens = newViewFinderDimens
         }
 
-        val bufferWidth = bufferDimens.width.toFloat()
-        val bufferHeight = bufferDimens.height.toFloat()
-
         Log.d("RESULTS", "Transform image width: ${bufferDimens.width}, transform image height ${bufferDimens.height}")
 
+        val bufferWidth = bufferDimens.width.toFloat()
+        val bufferHeight = bufferDimens.height.toFloat()
         val viewFinderWidth = viewFinderDimens.width.toFloat()
         val viewFinderHeight = viewFinderDimens.height.toFloat()
 
@@ -116,11 +119,12 @@ class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinde
         }
 
         val matrix = Matrix().apply {
-            setScale(scaleX, scaleY, bufferWidth / 2, bufferHeight / 2)
+            setScale(scaleX, scaleY, centerX, centerY)
             postRotate(-viewFinderRotation!!.toFloat(), centerX, centerY)
         }
 
         textureView.setTransform(matrix)
+
     }
 
     companion object {

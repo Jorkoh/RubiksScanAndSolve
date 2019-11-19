@@ -142,7 +142,7 @@ namespace rbdt {
         if (rotation == -90 || rotation == 90 || rotation == 270) {
             rotatedImageHeight = imageWidth;
             rotatedImageWidth = imageHeight;
-        }else{
+        } else {
             rotatedImageHeight = imageHeight;
             rotatedImageWidth = imageWidth;
         }
@@ -246,9 +246,7 @@ namespace rbdt {
             cv::cvtColor(frameYuv, outputFrameRgba, cvColorConversionCode);
 
             // #Added
-            imageSaver->saveImage(outputFrameRgba, frameNumber, "before rotation");
             rotateMat(outputFrameRgba, rotation);
-            imageSaver->saveImage(outputFrameRgba, frameNumber, "after rotation");
 
             if (needsResize) {
                 if (debuggable) {
@@ -283,9 +281,7 @@ namespace rbdt {
             processingFrameGrey = cv::Mat(processingHeight, processingWidth, CV_8UC1, (uchar *) imageData + processingGrayImageOffset);
 
             // #Added
-            imageSaver->saveImage(outputFrameRgba, frameNumber, "before rotation");
             rotateMat(outputFrameRgba, rotation);
-            imageSaver->saveImage(outputFrameRgba, frameNumber, "after rotation");
 
             if (needsResize) {
                 if (debuggable) {
@@ -306,18 +302,31 @@ namespace rbdt {
             // Gray is obtained changing color space of the processing RGBA
             cv::cvtColor(processingFrameRgba, processingFrameGrey, CV_RGBA2GRAY);
         }
-//
-//        imageSaver->saveImage(processingFrameRgba, frameNumber, "before perspective test");
-//        float cornersHeight = static_cast<float>(tan(30 * CV_PI / 180) * processingWidth / 2.0f);
-//        std::vector<cv::Point2f> topFaceCorners;
-//        topFaceCorners.emplace_back(cv::Point2f(processingWidth, cornersHeight));
-//        topFaceCorners.emplace_back(cv::Point2f(processingWidth / 2.0f, processingHeight));
-//        topFaceCorners.emplace_back(cv::Point2f(0, cornersHeight));
-//        topFaceCorners.emplace_back(cv::Point2f(processingWidth / 2.0f, processingHeight / 2.0f));
-//        applyPerspectiveTransform(processingFrameRgba, processingFrameRgba, topFaceCorners,
-//                                  cv::Size(processingWidth, processingHeight));
-//        imageSaver->saveImage(processingFrameRgba, frameNumber, "after perspective test");
-        // #EndAdded
+
+        // #Added
+        auto verticalOffset = static_cast<float>((processingHeight-processingWidth) / 2.0);
+        auto lensOffset = static_cast<float>(processingWidth* 0.11);
+        std::vector<cv::Point2f> topFaceCorners;
+        // top corner
+        topFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(processingWidth * 0.5),
+                static_cast<float>(processingWidth * 0.0459 + verticalOffset + lensOffset)));
+        // right corner
+        topFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(processingWidth * 0.9366),
+                static_cast<float>(processingWidth * 0.2979 + verticalOffset)));
+        // left corner
+        topFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(processingWidth * 0.0634),
+                static_cast<float>(processingWidth * 0.2979 + verticalOffset)));
+        // center
+        topFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(processingWidth * 0.5),
+                static_cast<float>(processingWidth * 0.55 + verticalOffset)));
+        applyPerspectiveTransform(processingFrameRgba, processingFrameRgba, topFaceCorners, cv::Size(processingWidth, processingWidth));
+//        cv::cvtColor(processingFrameRgba, processingFrameRgba, CV_RGBA2BGR);
+        imageSaver->saveImage(processingFrameRgba, frameNumber, "_perspective");
+        // End #Added
 
 
         if (isDebuggable()) {
@@ -457,8 +466,8 @@ namespace rbdt {
         std::vector<cv::Point2f> outputPoints;
         outputPoints.emplace_back(cv::Point2f(0, 0));
         outputPoints.emplace_back(cv::Point2f(outputSize.width - 1, 0));
-        outputPoints.emplace_back(cv::Point2f(outputSize.width - 1, outputSize.height - 1));
         outputPoints.emplace_back(cv::Point2f(0, outputSize.height - 1));
+        outputPoints.emplace_back(cv::Point2f(outputSize.width - 1, outputSize.height - 1));
 
         //Apply the perspective transformation
         auto perspectiveMatrix = cv::getPerspectiveTransform(inputPoints, outputPoints);
