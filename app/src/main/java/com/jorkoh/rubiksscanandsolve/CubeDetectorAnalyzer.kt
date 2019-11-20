@@ -15,6 +15,9 @@ typealias DetectorListener = (detected: Boolean, lastImageWithDetection: Bitmap)
 
 class CubeDetectorAnalyzer(listener: DetectorListener? = null) : ImageAnalysis.Analyzer {
 
+    //TODO temporary
+    var detectFrame = false
+
     private val listeners = ArrayList<DetectorListener>().apply { listener?.let { add(it) } }
     private var lastAnalyzedTimestamp = 0L
     private var areFaceletsDetected = false
@@ -49,10 +52,13 @@ class CubeDetectorAnalyzer(listener: DetectorListener? = null) : ImageAnalysis.A
         // If there are no listeners attached, we don't need to perform analysis
         if (listeners.isEmpty()) return
 
-        // Try to detect no more often that every quarter of a second
-        val currentTimestamp = System.currentTimeMillis()
-        if (currentTimestamp - lastAnalyzedTimestamp >= 5000) {
-            lastAnalyzedTimestamp = currentTimestamp
+//        // Try to detect no more often that every quarter of a second
+//        val currentTimestamp = System.currentTimeMillis()
+//        if (currentTimestamp - lastAnalyzedTimestamp >= 5000) {
+//            lastAnalyzedTimestamp = currentTimestamp
+
+        if (detectFrame) {
+            detectFrame = false
 
             Log.d("RESULTS", "Analyzer image rotation degrees: $rotationDegrees")
             Log.d("RESULTS", "Analyzer image width: ${image.width}, analyzer image height ${image.height}")

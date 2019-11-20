@@ -129,6 +129,15 @@ private:
     float computeMargin(Circle referenceCircle, std::vector<Circle> validCircles);
 
     /**
+     * Since the faces will now always be oriented with the image we can estimate the position of the facelet based on the position of
+     * the other facelets, this way the cube can be discovered when testing any facelets instead of only top left configurations
+     * @param referenceCircle
+     * @param validCircles
+     * @return
+     */
+    int estimatePositionOfFacelet(Circle referenceCircle,std::vector<Circle> validCircles);
+
+    /**
      * Further filters the list of Circle elements, s.t. after this filtering only Circles of area & orientation similar to the
      * reference Circle will be considered valid.
      *
@@ -150,8 +159,7 @@ private:
      * @return a std::vector containing 8 estimated facelets positions, represented as Circle objects, for the
      * reference Circle received as a parameter
      */
-    std::vector<Circle> estimateRemainingFaceletsPositions(const Circle &referenceCircle,
-                                                           float margin) const;
+    std::vector<Circle> estimateRemainingFaceletsPositions(const Circle &referenceCircle, float margin, int position) const;
 
     /**
      * Given the list of estimated (or generated) facelets, searches for overlaps with Circles which represent real contours

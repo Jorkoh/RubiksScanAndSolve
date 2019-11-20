@@ -17,6 +17,7 @@ import androidx.camera.core.*
 import androidx.fragment.app.Fragment
 import com.jorkoh.rubiksscanandsolve.utils.AutoFitPreviewBuilder
 import kotlinx.android.synthetic.main.fragment_scan.*
+import kotlinx.android.synthetic.main.fragment_scan.view.*
 import permissions.dispatcher.*
 import java.util.concurrent.Executors
 
@@ -50,7 +51,12 @@ class ScanFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_scan, container, false)
+        return inflater.inflate(R.layout.fragment_scan, container, false).apply {
+            this.button.setOnClickListener {
+                //TODO temporary stuff
+                (imageAnalyzer?.analyzer as CubeDetectorAnalyzer).detectFrame = true
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

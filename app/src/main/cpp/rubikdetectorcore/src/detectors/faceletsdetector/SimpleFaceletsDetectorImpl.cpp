@@ -39,18 +39,20 @@ namespace rbdt {
         std::vector<cv::RotatedRect> filteredRectangles;
         std::vector<Circle> filteredRectanglesInnerCircles;
 
+        // Find rectangles, add inner circles to them
         filterContours(contours, filteredRectangles, filteredRectanglesInnerCircles);
         if (debuggable) {
-            LOG_DEBUG("RubikJniPart.cpp",
-                      "SimpleFaceletsDetectorBehavior - after filter. Found %d inner circles.",
+            LOG_DEBUG("RubikJniPart.cpp", "SimpleFaceletsDetectorBehavior - after filter. Found %d inner circles.",
                       filteredRectanglesInnerCircles.size());
         }
+
+        // Test each one of those rectangles with inner circle (facelets)
+        // potential facelets are those similar enough to the one being used as reference
+        // estimated facelets are created based on the reference, a calculated margin and the estimated position of the reference
         for (int i = 0; i < filteredRectanglesInnerCircles.size(); i++) {
             Circle referenceCircle = filteredRectanglesInnerCircles[i];
-            //test each and every rectangle
-            std::vector<Circle> potentialFacelets = findPotentialFacelets(referenceCircle,
-                                                                          filteredRectanglesInnerCircles,
-                                                                          i);
+            // Filter inner circles (facelets) similar enough to the reference inner circle (facelet)
+            std::vector<Circle> potentialFacelets = findPotentialFacelets(referenceCircle, filteredRectanglesInnerCircles, i);
 
             if (potentialFacelets.size() < MIN_POTENTIAL_FACELETS_REQUIRED) {
                 if (debuggable) {
@@ -62,29 +64,30 @@ namespace rbdt {
                 continue;
             }
 
+            // Find the minimum distance between the circles
             float margin = computeMargin(referenceCircle, potentialFacelets);
-            std::vector<Circle> estimatedFacelets = estimateRemainingFaceletsPositions(
-                    referenceCircle,
-                    margin);
-
-            std::vector<std::vector<Circle>> facetModel = matchEstimatedWithPotentialFacelets(
-                    potentialFacelets, estimatedFacelets);
+            // #Added guess the facelet position in the face
+            int position = estimatePositionOfFacelet(referenceCircle, potentialFacelets);
+            if (position == -1) {
+                if (debuggable) {
+                    LOG_DEBUG("RubikJniPart.cpp", "SimpleFaceletsDetectorBehavior - didn't find a valid position for the facelet. Ignore.");
+                }
+                continue;
+            }
+            // Create estimated facelet positions as circles assuming reference circle as top left position with margin and same area
+            std::vector<Circle> estimatedFacelets = estimateRemainingFaceletsPositions(referenceCircle, margin, position);
+            // Find those potential facelets that match the estimated ones
+            std::vector<std::vector<Circle>> facetModel = matchEstimatedWithPotentialFacelets(potentialFacelets, estimatedFacelets);
             facetModel[0][0] = referenceCircle;
+            // Decide if the cube has been found depending on the matched facelets placement
             bool cubeFound = verifyIfCubeFound(facetModel);
             if (cubeFound) {
-                if (debuggable) {
-                    LOG_DEBUG("RubikJniPart.cpp",
-                              "SimpleFaceletsDetectorBehavior - found cube!");
-                }
                 fillMissingFacelets(estimatedFacelets, facetModel);
                 //dummy colors for now
-                std::vector<std::vector<RubikFacelet::Color>> colors(3,
-                                                                     std::vector<RubikFacelet::Color>(
-                                                                             3));
+                std::vector<std::vector<RubikFacelet::Color>> colors(3, std::vector<RubikFacelet::Color>(3));
 
                 if (debuggable) {
-                    LOG_DEBUG("RubikJniPart.cpp",
-                              "SimpleFaceletsDetectorBehavior - creating the result from internal model");
+                    LOG_DEBUG("RubikJniPart.cpp", "SimpleFaceletsDetectorBehavior - creating the result from internal model");
                 }
                 //create result
                 facelets = createResult(facetModel);
@@ -125,9 +128,7 @@ namespace rbdt {
         }
 
         if (debuggable) {
-            LOG_DEBUG("RubikJniPart.cpp",
-                      "* * **SimpleFaceletsDetectorBehavior - end, returning facelets of size: %ld",
-                      facelets.size());
+            LOG_DEBUG("RubikJniPart.cpp", "* * **SimpleFaceletsDetectorBehavior - end, returning facelets of size: %ld", facelets.size());
         }
         return facelets;
         //end
@@ -178,7 +179,7 @@ namespace rbdt {
             float minDimensionValue = std::min(currentRect.size.height, currentRect.size.width);
             float aspectRatio = maxDimensionValue / minDimensionValue;
             //verify contour aspect ratio, size and area.
-            if (aspectRatio < 1.2f &&
+            if (aspectRatio < 1.4f &&
                 currentRect.size.area() > minValidShapeArea &&
                 currentRect.size.height < maxShapeSideSize &&
                 currentRect.size.width < maxShapeSideSize) {
@@ -190,8 +191,7 @@ namespace rbdt {
         }
     }
 
-    float SimpleFaceletsDetectorImpl::computeMargin(Circle referenceCircle,
-                                                    std::vector<Circle> validCircles) {
+    float SimpleFaceletsDetectorImpl::computeMargin(Circle referenceCircle, std::vector<Circle> validCircles) {
         float margin = 320.0f;
         for (int i = 0; i < validCircles.size(); i++) {
             Circle testedCircle = validCircles[i];
@@ -215,6 +215,54 @@ namespace rbdt {
         return (margin >= 320.0f || margin >= referenceCircle.radius) ? 10.f : margin;
     }
 
+    int SimpleFaceletsDetectorImpl::estimatePositionOfFacelet(Circle referenceCircle, std::vector<Circle> validCircles) {
+        // top row facelets are 0, 1 and 2, middle row 3, 4 and 5, bottom row 6, 7 and 8 from left to right
+        bool hasFaceletsToTheRight = false;
+        bool hasFaceletsToTheLeft = false;
+        bool hasFaceletsDown = false;
+        bool hasFaceletsUp = false;
+        for (int i = 0; i < validCircles.size(); i++) {
+            Circle testedCircle = validCircles[i];
+            if (!hasFaceletsToTheRight && testedCircle.center.x > referenceCircle.center.x + referenceCircle.radius) {
+                hasFaceletsToTheRight = true;
+            }
+            if (!hasFaceletsToTheLeft && testedCircle.center.x < referenceCircle.center.x - referenceCircle.radius) {
+                hasFaceletsToTheLeft = true;
+            }
+            if (!hasFaceletsDown && testedCircle.center.y > referenceCircle.center.y + referenceCircle.radius) {
+                hasFaceletsDown = true;
+            }
+            if (!hasFaceletsUp && testedCircle.center.y < referenceCircle.center.y - referenceCircle.radius) {
+                hasFaceletsUp = true;
+            }
+            if (hasFaceletsToTheRight && hasFaceletsToTheLeft && hasFaceletsDown && hasFaceletsUp) {
+                break;
+            }
+        }
+        // Yes, this can be simplified. No, I won't change it because this way it's easily readable
+        if (hasFaceletsToTheRight && !hasFaceletsToTheLeft && hasFaceletsDown && !hasFaceletsUp) {
+            return 0;
+        } else if (hasFaceletsToTheRight && hasFaceletsToTheLeft && hasFaceletsDown && !hasFaceletsUp) {
+            return 1;
+        } else if (!hasFaceletsToTheRight && hasFaceletsToTheLeft && hasFaceletsDown && !hasFaceletsUp) {
+            return 2;
+        } else if (hasFaceletsToTheRight && !hasFaceletsToTheLeft && hasFaceletsDown && hasFaceletsUp) {
+            return 3;
+        } else if (hasFaceletsToTheRight && hasFaceletsToTheLeft && hasFaceletsDown && hasFaceletsUp) {
+            return 4;
+        } else if (!hasFaceletsToTheRight && hasFaceletsToTheLeft && hasFaceletsDown && hasFaceletsUp) {
+            return 5;
+        } else if (hasFaceletsToTheRight && !hasFaceletsToTheLeft && !hasFaceletsDown && hasFaceletsUp) {
+            return 6;
+        } else if (hasFaceletsToTheRight && hasFaceletsToTheLeft && !hasFaceletsDown && hasFaceletsUp) {
+            return 7;
+        } else if (!hasFaceletsToTheRight && hasFaceletsToTheLeft && !hasFaceletsDown && hasFaceletsUp) {
+            return 8;
+        } else {
+            return -1;
+        }
+    }
+
     std::vector<Circle> SimpleFaceletsDetectorImpl::findPotentialFacelets(
             const Circle &referenceCircle,
             const std::vector<Circle> &innerCircles,
@@ -232,7 +280,7 @@ namespace rbdt {
             float ratio = maxArea / minArea;
             float angleDifference = (float) std::abs((referenceCircle.angle - testedCircle.angle) *
                                                      180 / CV_PI);
-            if (ratio < 1.35f && angleDifference < 15.0f) {
+            if (ratio < 1.4f && angleDifference < 20.0f) {
                 foundCircles.push_back(testedCircle);
             }
         }
@@ -241,53 +289,67 @@ namespace rbdt {
 
     std::vector<Circle> SimpleFaceletsDetectorImpl::estimateRemainingFaceletsPositions(
             const Circle &referenceCircle,
-            float margin) const {
+            float margin,
+            int position) const {
         //draw the remaining rectangles
         std::vector<Circle> newCircles;
         float diameterWithMargin = referenceCircle.radius * 2 + margin;
 
         float angle = referenceCircle.angle;
-        float xOffset = diameterWithMargin * std::cos(angle);
-        float yOffset = diameterWithMargin * std::sin(angle);
-        float xOffset2 = diameterWithMargin * (float) std::cos(angle + M_PI_2);
-        float yOffset2 = diameterWithMargin * (float) std::sin(angle + M_PI_2);
-        //create first circles in 2nd and 3rd rows respectively
-        Circle secondRowFirstCircle = Circle(referenceCircle,
-                                             cv::Point2f(xOffset2, yOffset2));
-        Circle thirdRowFirstCircle = Circle(referenceCircle,
-                                            cv::Point2f(2 * xOffset2, 2 * yOffset2));
+        // column offsets
+        float xOffsetColumn = diameterWithMargin * std::cos(angle);
+        float yOffsetColumn = diameterWithMargin * std::sin(angle);
+        // row offsets
+        float xOffsetRow = diameterWithMargin * (float) std::cos(angle + M_PI_2);
+        float yOffsetRow = diameterWithMargin * (float) std::sin(angle + M_PI_2);
 
-        //complete first row
-        newCircles.push_back(Circle(referenceCircle,
-                                    cv::Point2f(xOffset, yOffset)));
-        newCircles.push_back(Circle(referenceCircle,
-                                    cv::Point2f(2 * xOffset, 2 * yOffset)));
+        /**/
+        for (int i = 0; i < 9; i++) {
+            if (i == position) {
+                // skip the one being used as reference
+                continue;
+            }
+//            float xOffset = xOffsetColumn * (i % 3) * ((i % 3 - position % 3) < 0 ? -1 : 1) +
+//                            xOffsetRow * (i / 3) * ((i / 3 - position / 3) < 0 ? -1 : 1);
+//            float yOffset = yOffsetColumn * (i % 3) * ((i % 3 - position % 3) < 0 ? -1 : 1) +
+//                            yOffsetRow * (i / 3) * ((i / 3 - position / 3) < 0 ? -1 : 1);
+            float xOffset = xOffsetColumn * (i % 3 - position % 3) +
+                            xOffsetRow * (i / 3 - position / 3);
+            float yOffset = yOffsetColumn * (i % 3 - position % 3) +
+                            yOffsetRow * (i / 3 - position / 3);
+            newCircles.emplace_back(referenceCircle, cv::Point2f(xOffset, yOffset));
+        }
+        /**/
 
-        //push first circle in second row
-        newCircles.push_back(secondRowFirstCircle);
-        //complete second row
-        newCircles.push_back(Circle(secondRowFirstCircle,
-                                    cv::Point2f(xOffset, yOffset)));
-        newCircles.push_back(Circle(secondRowFirstCircle,
-                                    cv::Point2f(2 * xOffset, 2 * yOffset)));
-
-        //push first circle in third row
-        newCircles.push_back(thirdRowFirstCircle);
-        //complete third row
-        newCircles.push_back(Circle(thirdRowFirstCircle,
-                                    cv::Point2f(xOffset, yOffset)));
-        newCircles.push_back(Circle(thirdRowFirstCircle,
-                                    cv::Point2f(2 * xOffset, 2 * yOffset)));
+//        //create first circles in 2nd and 3rd rows respectively
+//        Circle secondRowFirstCircle = Circle(referenceCircle, cv::Point2f(xOffsetRow, yOffsetRow));
+//        Circle thirdRowFirstCircle = Circle(referenceCircle, cv::Point2f(2 * xOffsetRow, 2 * yOffsetRow));
+//
+//        //complete first row
+//        newCircles.push_back(Circle(referenceCircle, cv::Point2f(xOffsetColumn, yOffsetColumn)));
+//        newCircles.push_back(Circle(referenceCircle, cv::Point2f(2 * xOffsetColumn, 2 * yOffsetColumn)));
+//
+//        //push first circle in second row
+//        newCircles.push_back(secondRowFirstCircle);
+//        //complete second row
+//        newCircles.push_back(Circle(secondRowFirstCircle, cv::Point2f(xOffsetColumn, yOffsetColumn)));
+//        newCircles.push_back(Circle(secondRowFirstCircle, cv::Point2f(2 * xOffsetColumn, 2 * yOffsetColumn)));
+//
+//        //push first circle in third row
+//        newCircles.push_back(thirdRowFirstCircle);
+//        //complete third row
+//        newCircles.push_back(Circle(thirdRowFirstCircle, cv::Point2f(xOffsetColumn, yOffsetColumn)));
+//        newCircles.push_back(Circle(thirdRowFirstCircle, cv::Point2f(2 * xOffsetColumn, 2 * yOffsetColumn)));
         return newCircles;
     }
 
-    std::vector<std::vector<Circle>>
-    SimpleFaceletsDetectorImpl::matchEstimatedWithPotentialFacelets(
+    std::vector<std::vector<Circle>> SimpleFaceletsDetectorImpl::matchEstimatedWithPotentialFacelets(
             const std::vector<Circle> &potentialFacelets,
             const std::vector<Circle> &estimatedFacelets) {
 
         std::vector<std::vector<Circle>> facetModel(3, std::vector<Circle>(3));
 
+        // for each one of the estimated facelets try to find a potential facelet whose overlaps enough
         for (int i = 0; i < 8; i++) {
             Circle testedCircle = estimatedFacelets[i];
             for (int j = 0; j < potentialFacelets.size(); j++) {
@@ -295,18 +357,16 @@ namespace rbdt {
 
                     float R = std::max(testedCircle.radius, potentialFacelets[j].radius);
                     float r = std::min(testedCircle.radius, potentialFacelets[j].radius);
-                    float d = rbdt::pointsDistance(testedCircle.center,
-                                                   potentialFacelets[j].center);
+                    float d = rbdt::pointsDistance(testedCircle.center, potentialFacelets[j].center);
 
                     float part1 = r * r * std::acos((d * d + r * r - R * R) / (2 * d * r));
                     float part2 = R * R * std::acos((d * d + R * R - r * r) / (2 * d * R));
-                    float part3 =
-                            0.5f *
-                            std::sqrt((-d + r + R) * (d + r - R) * (d - r + R) * (d + r + R));
+                    float part3 = 0.5f * std::sqrt((-d + r + R) * (d + r - R) * (d - r + R) * (d + r + R));
                     float intersectionArea = part1 + part2 - part3;
 
-                    float areasRatio = potentialFacelets[j].area / intersectionArea;
-                    if (areasRatio < 1.45f) {
+                    float areasRatio = intersectionArea / potentialFacelets[j].area;
+                    if (areasRatio > 0.55f) {
+                        // found it
                         int auxI = (i + 1) / 3;
                         int auxJ = (i + 1) % 3;
                         facetModel[auxI][auxJ] = potentialFacelets[j];
@@ -319,45 +379,61 @@ namespace rbdt {
         return facetModel;
     }
 
-    bool SimpleFaceletsDetectorImpl::verifyIfCubeFound(
-            const std::vector<std::vector<Circle>> &cubeFacet) const {
-        bool cubeFound = false;
-        //verify if valid cube model
-        //top left element is always considered to be 1. if any of these is 0, then it means no sticker was detected on the specific row
-        int topRow = 100 * !cubeFacet[0][0].isEmpty() +
-                     10 * !cubeFacet[0][1].isEmpty() +
-                     !cubeFacet[0][2].isEmpty();
-        int middleRow = 100 * !cubeFacet[1][0].isEmpty() +
-                        10 * !cubeFacet[1][1].isEmpty() +
-                        !cubeFacet[1][2].isEmpty();
-        int bottomRow = 100 * !cubeFacet[2][0].isEmpty() +
-                        10 * !cubeFacet[2][1].isEmpty() +
-                        !cubeFacet[2][2].isEmpty();
+    bool SimpleFaceletsDetectorImpl::verifyIfCubeFound(const std::vector<std::vector<Circle>> &cubeFacet) const {
+//        // IMPORTANT, this is too strict
+//        // valid position: top 101 or 111 with at least one on middle row and at least two on bottom row
+//        // valid position: top 110 with middle row right one and bottom row...
+//        bool cubeFound = false;
+//        //verify if valid cube model
+//        //top left element is always considered to be 1. if any of these is 0, then it means no sticker was detected on the specific row
+//        int topRow = 100 * !cubeFacet[0][0].isEmpty() +
+//                     10 * !cubeFacet[0][1].isEmpty() +
+//                     !cubeFacet[0][2].isEmpty();
+//        int middleRow = 100 * !cubeFacet[1][0].isEmpty() +
+//                        10 * !cubeFacet[1][1].isEmpty() +
+//                        !cubeFacet[1][2].isEmpty();
+//        int bottomRow = 100 * !cubeFacet[2][0].isEmpty() +
+//                        10 * !cubeFacet[2][1].isEmpty() +
+//                        !cubeFacet[2][2].isEmpty();
+//
+//        switch (topRow) {
+//            case 101:
+//            case 111:
+//                //these two cases can be treated in the same manner
+//                if (middleRow != 0 && bottomRow != 100 &&
+//                    bottomRow != 10 &&
+//                    bottomRow != 1 &&
+//                    bottomRow != 0) {
+//                    cubeFound = true;
+//                }
+//                break;
+//            case 110:
+//                if ((middleRow == 1 || middleRow == 11 || middleRow == 101 || middleRow == 111) &&
+//                    (bottomRow == 111 || bottomRow == 11 || bottomRow == 101 || bottomRow == 110)) {
+//                    cubeFound = true;
+//                } else if ((middleRow == 10 || middleRow == 100 || middleRow == 110) &&
+//                           (bottomRow == 11 || bottomRow == 101 || bottomRow == 111)) {
+//                    cubeFound = true;
+//                }
+//                break;
+//            default:
+//                break;
+//        }
+//        if (debuggable) {
+//            LOG_DEBUG("RubikJniPart.cpp", "SimpleFaceletsDetectorBehavior - found cube!");
+//            LOG_DEBUG("RubikJniPart.cpp", "Top row: %d, middle row: %d, bottom row: %d.", topRow, middleRow, bottomRow);
+//        }
+//        return cubeFound;
 
-        switch (topRow) {
-            case 101:
-            case 111:
-                //these two cases can be treated in the same manner
-                if (middleRow != 0 && bottomRow != 100 &&
-                    bottomRow != 10 &&
-                    bottomRow != 1 &&
-                    bottomRow != 0) {
-                    cubeFound = true;
+        int faceletsCount = 0;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (!cubeFacet[i][j].isEmpty()) {
+                    faceletsCount++;
                 }
-                break;
-            case 110:
-                if ((middleRow == 1 || middleRow == 11 || middleRow == 101 || middleRow == 111) &&
-                    (bottomRow == 111 || bottomRow == 11 || bottomRow == 101 || bottomRow == 110)) {
-                    cubeFound = true;
-                } else if ((middleRow == 10 || middleRow == 100 || middleRow == 110) &&
-                           (bottomRow == 11 || bottomRow == 101 || bottomRow == 111)) {
-                    cubeFound = true;
-                }
-                break;
-            default:
-                break;
+            }
         }
-        return cubeFound;
+        return faceletsCount > 4;
     }
 
     void SimpleFaceletsDetectorImpl::fillMissingFacelets(
@@ -366,8 +442,7 @@ namespace rbdt {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (facetModel[i][j].isEmpty()) {
-                    facetModel[i][j] =
-                            estimatedFacelets[i * 3 + j - 1];
+                    facetModel[i][j] = estimatedFacelets[i * 3 + j - 1];
                 }
             }
         }

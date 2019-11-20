@@ -305,7 +305,7 @@ namespace rbdt {
 
         // #Added
         auto verticalOffset = static_cast<float>((processingHeight-processingWidth) / 2.0);
-        auto lensOffset = static_cast<float>(processingWidth* 0.11);
+        auto lensOffset = static_cast<float>(processingWidth* 0.112);
         std::vector<cv::Point2f> topFaceCorners;
         // top corner
         topFaceCorners.emplace_back(cv::Point2f(
@@ -324,6 +324,7 @@ namespace rbdt {
                 static_cast<float>(processingWidth * 0.5),
                 static_cast<float>(processingWidth * 0.55 + verticalOffset)));
         applyPerspectiveTransform(processingFrameRgba, processingFrameRgba, topFaceCorners, cv::Size(processingWidth, processingWidth));
+        applyPerspectiveTransform(processingFrameGrey, processingFrameGrey, topFaceCorners, cv::Size(processingWidth, processingWidth));
 //        cv::cvtColor(processingFrameRgba, processingFrameRgba, CV_RGBA2BGR);
         imageSaver->saveImage(processingFrameRgba, frameNumber, "_perspective");
         // End #Added

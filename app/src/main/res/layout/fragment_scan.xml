@@ -36,10 +36,9 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintDimensionRatio="1:1"
-        android:layout_marginTop="10dp"
         app:layout_constraintEnd_toStartOf="@id/guideline_end_preview"
         app:layout_constraintStart_toEndOf="@id/guideline_start_preview"
-        app:layout_constraintTop_toBottomOf="@id/card_preview"/>
+        app:layout_constraintTop_toBottomOf="@+id/button" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_top_preview"
@@ -61,5 +60,14 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.9" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/card_preview" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
