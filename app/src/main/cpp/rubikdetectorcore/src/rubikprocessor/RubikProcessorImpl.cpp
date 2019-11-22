@@ -91,7 +91,7 @@ namespace rbdt {
         frameYUVByteCount = originalWidth * (originalHeight + originalHeight / 2);
         frameYUVOffset = RubikProcessorImpl::NO_OFFSET;
 
-        frameRGBAByteCount = DEFAULT_DIMENSION * 8;
+        frameRGBAByteCount = originalWidth * originalHeight * 4;
         frameRGBAOffset = frameYUVOffset + frameYUVByteCount;
 
         faceRGBAByteCount = DEFAULT_FACE_DIMENSION * 8;
@@ -106,7 +106,7 @@ namespace rbdt {
     }
 
     // Color, crop,  resize, rotate, transform, gray, detect facelets, (if found) extract facelets from color, (later on) analyze colors
-    std::vector<std::vector<RubikFacelet>> RubikProcessorImpl::findCubeInternal(const uint8_t *imageData) {
+    std::vector<std::vector<RubikFacelet>> RubikProcessorImpl::findCubeInternal(const uint8_t *data) {
         /* Frame rate stuff */
         frameNumber++;
         double processingStart = rbdt::getCurrentTimeMillis();
@@ -115,21 +115,21 @@ namespace rbdt {
         // Allocate the mats
         // IMPORTANT, processing color frames are in RGBA, if saved directly to disk for debugging convert with CV_RGB2BGR
         cv::Mat frameYUV(originalHeight + originalHeight / 2, originalWidth, CV_8UC1,
-                         (uchar *) imageData);
+                (uchar *) data);
         cv::Mat frameRGBA(originalHeight, originalWidth, CV_8UC4,
-                          (uchar *) imageData + frameRGBAOffset);
+                (uchar *) data + frameRGBAOffset);
         cv::Mat topFaceRgba(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC4,
-                            (uchar *) imageData + firstFaceRGBAOffset);
+                (uchar *) data + firstFaceRGBAOffset);
         cv::Mat leftFaceRgba(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC4,
-                             (uchar *) imageData + firstFaceRGBAOffset + faceRGBAByteCount);
+                             (uchar *) data + firstFaceRGBAOffset + faceRGBAByteCount);
         cv::Mat rightFaceRgba(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC4,
-                              (uchar *) imageData + firstFaceRGBAOffset + (2 * faceRGBAByteCount));
+                              (uchar *) data + firstFaceRGBAOffset + (2 * faceRGBAByteCount));
         cv::Mat topFaceGray(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC1,
-                            (uchar *) imageData + firstFaceGrayOffset);
+                (uchar *) data + firstFaceGrayOffset);
         cv::Mat leftFaceGray(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC1,
-                             (uchar *) imageData + firstFaceGrayOffset + faceGrayByteCount);
+                             (uchar *) data + firstFaceGrayOffset + faceGrayByteCount);
         cv::Mat rightFaceGray(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC1,
-                              (uchar *) imageData + firstFaceGrayOffset + (2 * faceGrayByteCount));
+                              (uchar *) data + firstFaceGrayOffset + (2 * faceGrayByteCount));
 
         // Color
         cv::cvtColor(frameYUV, frameRGBA, cv::COLOR_YUV2RGBA_NV21);
@@ -179,7 +179,6 @@ namespace rbdt {
 //        imageSaver->saveImage(rightFaceGray, frameNumber, "_gray_perspective_right");
         /**/
 
-//        LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - Searching for facelets.");
         std::vector<std::vector<RubikFacelet>> topFacelets = faceletsDetector->detect(topFaceGray, "top_face_", frameNumber);
         std::vector<std::vector<RubikFacelet>> leftFacelets = faceletsDetector->detect(leftFaceGray, "left_face_", frameNumber);
         std::vector<std::vector<RubikFacelet>> rightFacelets = faceletsDetector->detect(rightFaceGray, "right_face_", frameNumber);

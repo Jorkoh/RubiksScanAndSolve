@@ -26,6 +26,8 @@ import java.util.concurrent.Executors
 @RuntimePermissions
 class ScanFragment : Fragment() {
 
+    private val executor = Executors.newCachedThreadPool()
+
     private var displayId = -1
     private var preview: Preview? = null
     private var imageAnalyzer: ImageAnalysis? = null
@@ -72,7 +74,7 @@ class ScanFragment : Fragment() {
                 (imageAnalyzer?.analyzer as CubeDetectorAnalyzer).detectFrame = true
             }
             button_photo.setOnClickListener {
-                imageCapture?.takePicture(Executors.newCachedThreadPool(), object : ImageCapture.OnImageCapturedListener() {
+                imageCapture?.takePicture(executor, object : ImageCapture.OnImageCapturedListener() {
                     override fun onCaptureSuccess(image: ImageProxy?, rotationDegrees: Int) {
                         // It does return YUV! Won't be used tho..
                         Log.d("TEST", "Image format: ${image?.format}")
@@ -121,7 +123,7 @@ class ScanFragment : Fragment() {
         }.build()
 
         imageAnalyzer = ImageAnalysis(analyzerConfig).apply {
-            setAnalyzer(Executors.newCachedThreadPool(), CubeDetectorAnalyzer(detectorListener))
+            setAnalyzer(executor, CubeDetectorAnalyzer(detectorListener))
         }
 
         // Set up the capture use case to allow users to take photos

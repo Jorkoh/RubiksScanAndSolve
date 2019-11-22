@@ -213,17 +213,17 @@ private:
     void drawRectangleToMat(const cv::Mat &currentFrame, const cv::RotatedRect &rotatedRect,
                             const cv::Scalar color = cv::Scalar(0, 255, 0)) const;
 
-    static constexpr float MIN_VALID_SHAPE_TO_IMAGE_AREA_RATIO = 0.4f;
+    static constexpr float MIN_VALID_SHAPE_TO_IMAGE_AREA_RATIO = 3.0f;
 
     static constexpr int CIRCLE_DISTANCE_BUFFER = 2 * 10;
 
-    static constexpr int BLUR_KERNEL_SIZE = 5;
+    static constexpr int BLUR_KERNEL_SIZE = 7;
 
-    static constexpr int CANNY_LOW_THRESHOLD = 80;
+    static constexpr int CANNY_LOW_THRESHOLD = 100;
 
-    static constexpr int CANNY_THRESHOLD_RATIO = 3;
+    static constexpr int CANNY_THRESHOLD_RATIO = 10;
 
-    static constexpr int CANNY_APERTURE_SIZE = 5;
+    static constexpr int CANNY_APERTURE_SIZE = 7;
 
     static constexpr int MIN_POTENTIAL_FACELETS_REQUIRED = 4;
 

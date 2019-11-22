@@ -41,6 +41,11 @@ namespace rbdt {
         filterContours(contours, filteredRectangles, filteredRectanglesInnerCircles);
 //        LOG_DEBUG("RubikJniPart.cpp", "SimpleFaceletsDetectorBehavior - after filter. Found %d inner circles.",
 //                  filteredRectanglesInnerCircles.size());
+        /**/
+//        cv::Mat drawing = cv::Mat::zeros(frameGray.size(), CV_8UC3);
+//        drawFilteredRectangles(drawing, filteredRectangles);
+//        imageSaver->saveImage(drawing, frameNumber * 10, tag + "filtered_rectangles");
+        /**/
 
         // Test each one of those rectangles with inner circle (facelets)
         // potential facelets are those similar enough to the one being used as reference
@@ -71,9 +76,7 @@ namespace rbdt {
 
             // Find those potential facelets that match the estimated ones
             std::vector<std::vector<Circle>> facetModel = matchEstimatedWithPotentialFacelets(potentialFacelets, estimatedFacelets);
-            /**/
-            saveDebugData(frameGray, filteredRectangles, referenceCircle, potentialFacelets, estimatedFacelets, frameNumber, tag);
-            /**/
+//            saveDebugData(frameGray, filteredRectangles, referenceCircle, potentialFacelets, estimatedFacelets, frameNumber, tag);
             facetModel[0][0] = referenceCircle;
             // Decide if the cube has been found depending on the matched facelets placement
             faceFound = verifyIfFaceFound(facetModel);
@@ -217,7 +220,7 @@ namespace rbdt {
             int minArea = std::min(referenceCircle.area, testedCircle.area);
             float ratio = maxArea / minArea;
             float angleDifference = (float) std::abs((referenceCircle.angle - testedCircle.angle) * 180 / CV_PI);
-            if (ratio < 1.4f && angleDifference < 20.0f) {
+            if (ratio < 1.5f && angleDifference < 35.0f) {
                 foundCircles.push_back(testedCircle);
             }
         }

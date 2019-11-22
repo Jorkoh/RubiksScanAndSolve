@@ -1,13 +1,11 @@
 package com.jorkoh.rubiksscanandsolve
 
-import android.graphics.Bitmap
 import android.os.Environment
 import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.jorkoh.rubiksscanandsolve.rubikdetector.RubikDetector
 import com.jorkoh.rubiksscanandsolve.rubikdetector.RubikDetectorUtils
-import com.jorkoh.rubiksscanandsolve.rubikdetector.config.DrawConfig
 import java.nio.ByteBuffer
 
 typealias DetectorListener = (detected: Boolean) -> Unit
@@ -27,17 +25,12 @@ class CubeDetectorAnalyzer(listener: DetectorListener? = null) : ImageAnalysis.A
         .inputFrameRotation(90)
         // the input image will have a resolution of 640x480
         .inputFrameSize(640, 480)
-        // draw found facelets as colored rectangles
-        .drawConfig(DrawConfig.FilledCircles())
         // save images of the process
         .imageSavePath("${Environment.getExternalStorageDirectory()}/Rubik/")
         // builds the RubikDetector for the given params.
         .build()
     // allocate a ByteBuffer of the capacity required by the RubikDetector
     private val imageDataBuffer = ByteBuffer.allocateDirect(rubikDetector.requiredMemory)
-
-    // create a bitmap for the output frame
-    private val drawingBitmap = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888)
 
     override fun analyze(image: ImageProxy, rotationDegrees: Int) {
         // If there are no listeners attached, we don't need to perform analysis
@@ -48,8 +41,8 @@ class CubeDetectorAnalyzer(listener: DetectorListener? = null) : ImageAnalysis.A
 //        if (currentTimestamp - lastAnalyzedTimestamp >= 200) {
 //            lastAnalyzedTimestamp = currentTimestamp
 
-        if (detectFrame) {
-            detectFrame = false
+//        if (detectFrame) {
+//            detectFrame = false
 
             Log.d("RESULTS", "Analyzer image rotation degrees: $rotationDegrees")
             Log.d("RESULTS", "Analyzer image width: ${image.width}, analyzer image height ${image.height}")
@@ -68,6 +61,6 @@ class CubeDetectorAnalyzer(listener: DetectorListener? = null) : ImageAnalysis.A
             listeners.forEach { listener ->
                 listener(facelets != null)
             }
-        }
+//        }
     }
 }

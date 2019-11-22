@@ -106,7 +106,7 @@ namespace rbdt {
                            std::unique_ptr<FaceletsDrawController> faceletsDrawController,
                            std::shared_ptr<ImageSaver> imageSaver);
 
-        std::vector<std::vector<RubikFacelet>> findCubeInternal(const uint8_t *imageData);
+        std::vector<std::vector<RubikFacelet>> findCubeInternal(const uint8_t *data);
 
         /**
          * Extracts the color of each RubikFacelet in the array, then updates its color to match its detected color.
