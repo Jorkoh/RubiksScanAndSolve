@@ -9,39 +9,29 @@
 
 namespace rbdt {
 
-ImageSaver::ImageSaver(const std::string saveLocation) : path(saveLocation) {}
+    ImageSaver::ImageSaver(const std::string saveLocation) : path(saveLocation) {}
 
-ImageSaver::~ImageSaver() {
-    if (debuggable) {
+    ImageSaver::~ImageSaver() {
         LOG_DEBUG("RubikJniPart.cpp", "ImageSaver - destructor.");
     }
-}
 
-bool ImageSaver::saveImage(const cv::Mat &mat, const int frameNumber, const int regionId) {
-    std::stringstream regionIdStringStream;
-    regionIdStringStream << regionId;
-    return saveImage(mat, frameNumber, regionIdStringStream.str());
-}
-
-bool ImageSaver::saveImage(const cv::Mat &mat,
-                           const int frameNumber,
-                           const std::string regionName) {
-    std::stringstream frameNrStringStream;
-    frameNrStringStream << frameNumber;
-    std::string store_path = path + "/pic_" + frameNrStringStream.str() + "_" + regionName + ".jpg";
-    bool writeResult = cv::imwrite(store_path, mat);
-    if (debuggable && !writeResult) {
-        LOG_DEBUG("RubikJniPart.cpp", "Couldn't save image");
+    bool ImageSaver::saveImage(const cv::Mat &mat, const int frameNumber, const int regionId) {
+        std::stringstream regionIdStringStream;
+        regionIdStringStream << regionId;
+        return saveImage(mat, frameNumber, regionIdStringStream.str());
     }
-    return writeResult;
-}
 
-void ImageSaver::setDebuggable(const bool debuggable) {
-    ImageSaver::debuggable = debuggable;
-}
-
-bool ImageSaver::isDebuggable() const {
-    return ImageSaver::debuggable;
-}
+    bool ImageSaver::saveImage(const cv::Mat &mat,
+                               const int frameNumber,
+                               const std::string regionName) {
+        std::stringstream frameNrStringStream;
+        frameNrStringStream << frameNumber;
+        std::string store_path = path + "/pic_" + frameNrStringStream.str() + "_" + regionName + ".jpg";
+        bool writeResult = cv::imwrite(store_path, mat);
+        if (!writeResult) {
+            LOG_DEBUG("RubikJniPart.cpp", "Couldn't save image");
+        }
+        return writeResult;
+    }
 
 } //end namespace rbdt

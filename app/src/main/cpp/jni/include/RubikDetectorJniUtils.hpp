@@ -104,13 +104,6 @@ rbdt::RubikFacelet::Color colorFromInt(const int val);
  * @param val
  * @return
  */
-rbdt::RubikProcessor::ImageFormat imageFormatFromInt(const int val);
-
-/**
- *
- * @param val
- * @return
- */
 rbdt::DrawConfig::DrawMode drawModeFromInt(const int val);
 
 } //end namespace rbdt

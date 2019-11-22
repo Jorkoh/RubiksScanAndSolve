@@ -5,8 +5,6 @@
 #ifndef RUBIKDETECTOR_COLORDETECTOR_HPP
 #define RUBIKDETECTOR_COLORDETECTOR_HPP
 
-#include "../misc/Debuggable.hpp"
-
 namespace rbdt {
 
 /**
@@ -16,7 +14,7 @@ namespace rbdt {
  * @tparam RESULT_TYPE the type of the data containing the detected color
  */
 template<typename INPUT_TYPE, typename RESULT_TYPE>
-class ColorDetector : public Debuggable {
+class ColorDetector {
 public:
     /**
      * Empty virtual destructor.

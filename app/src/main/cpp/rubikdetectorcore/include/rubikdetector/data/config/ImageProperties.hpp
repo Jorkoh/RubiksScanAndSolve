@@ -32,8 +32,7 @@ namespace rbdt {
          */
         ImageProperties(const int rotation,
                         const int width,
-                        const int height,
-                        const RubikProcessor::ImageFormat inputImageFormat);
+                        const int height);
 
         /**
          * Rotation of the input frame in degrees.
@@ -49,16 +48,6 @@ namespace rbdt {
          * Height of both the input & output frames, in pixels.
          */
         const int height;
-
-        /**
-         * Image format of the input frame.
-         */
-        const RubikProcessor::ImageFormat inputImageFormat;
-
-        /**
-         * Image format of the output frame.
-         */
-        const RubikProcessor::ImageFormat outputImageFormat;
     };
 
 } //end namespace rbdt

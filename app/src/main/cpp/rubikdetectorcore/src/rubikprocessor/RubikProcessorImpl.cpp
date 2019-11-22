@@ -6,6 +6,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <opencv2/imgproc/types_c.h>
+#include <future>
 #include "../../include/rubikdetector/utils/Utils.hpp"
 #include "../../include/rubikdetector/utils/CrossLog.hpp"
 #include "../../include/rubikdetector/data/config/ImageProperties.hpp"
@@ -26,13 +27,10 @@ namespace rbdt {
     }
 
     RubikProcessorImpl::~RubikProcessorImpl() {
-        if (debuggable) {
-            LOG_DEBUG("NativeRubikProcessor", "RubikProcessorBehavior - destructor.");
-        }
+        LOG_DEBUG("NativeRubikProcessor", "RubikProcessorBehavior - destructor.");
     }
 
-    std::vector<std::vector<RubikFacelet>> RubikProcessorImpl::process(
-            const uint8_t *imageData) {
+    std::vector<std::vector<RubikFacelet>> RubikProcessorImpl::process(const uint8_t *imageData) {
         return findCubeInternal(imageData);
     }
 
@@ -40,74 +38,24 @@ namespace rbdt {
         applyImageProperties(newProperties);
     }
 
-    void RubikProcessorImpl::overrideInputFrameWithOutputFrame(const uint8_t *imageData) {
-        if (inputImageFormat == RubikProcessor::ImageFormat::RGBA8888) {
-            //input frame is equal to output frame already, this would have no effect.
-            return;
-        }
-        cv::Mat yuvFrame = cv::Mat(imageHeight + imageHeight / 2, imageWidth, CV_8UC1,
-                                   (uchar *) imageData + inputImageOffset);
-        cv::Mat rgbaFrame = cv::Mat(imageHeight, imageWidth, CV_8UC4,
-                                    (uchar *) imageData + outputRgbaImageOffset);
-        int reverseColorConversionCode;
-        switch (inputImageFormat) {
-            case RubikProcessor::ImageFormat::YUV_I420:
-                reverseColorConversionCode = cv::COLOR_RGBA2YUV_I420;
-                break;
-            case RubikProcessor::ImageFormat::YUV_YV12:
-                reverseColorConversionCode = cv::COLOR_RGBA2YUV_YV12;
-                break;
-            default:
-                reverseColorConversionCode = NO_CONVERSION_NEEDED;
-        }
-
-        if (reverseColorConversionCode != NO_CONVERSION_NEEDED) {
-            cv::cvtColor(rgbaFrame, yuvFrame, reverseColorConversionCode);
-        } else {
-            if (inputImageFormat == RubikProcessor::ImageFormat::YUV_NV21) {
-                rbdt::encodeNV21(rgbaFrame, yuvFrame, imageWidth, imageHeight);
-            } else if (inputImageFormat == RubikProcessor::ImageFormat::YUV_NV12) {
-                rbdt::encodeNV12(rgbaFrame, yuvFrame, imageWidth, imageHeight);
-            }
-        }
-    }
-
-    void RubikProcessorImpl::setDebuggable(const bool isDebuggable) {
-        if (debuggable) {
-            LOG_DEBUG("NativeRubikProcessor", "setDebuggable. current:%d, new: %d, frameNumber: %d",
-                      debuggable, isDebuggable, frameNumber);
-        }
-        debuggable = isDebuggable;
-        colorDetector->setDebuggable(isDebuggable);
-        if (imageSaver != nullptr) {
-            imageSaver->setDebuggable(isDebuggable);
-        }
-        faceletsDetector->setDebuggable(isDebuggable);
-        faceletsDrawController->setDebuggable(isDebuggable);
-    }
-
-    bool RubikProcessorImpl::isDebuggable() const {
-        return debuggable;
-    }
-
     int RubikProcessorImpl::getRequiredMemory() {
         return totalRequiredMemory;
     }
 
-    int RubikProcessorImpl::getOutputFrameBufferOffset() {
-        return outputRgbaImageOffset;
+    int RubikProcessorImpl::getFrameRGBABufferOffset() {
+        return frameRGBAOffset;
     }
 
-    int RubikProcessorImpl::getOutputFrameByteCount() {
-        return outputRgbaImageByteCount;
+    int RubikProcessorImpl::getFrameRGBAByteCount() {
+        return frameRGBAByteCount;
     }
 
-    int RubikProcessorImpl::getInputFrameByteCount() {
-        return inputImageByteCount;
+    int RubikProcessorImpl::getFrameYUVByteCount() {
+        return frameYUVByteCount;
     }
 
-    int RubikProcessorImpl::getInputFrameBufferOffset() {
-        return inputImageOffset;
+    int RubikProcessorImpl::getFrameYUVBufferOffset() {
+        return frameYUVOffset;
     }
 
     void RubikProcessorImpl::updateDrawConfig(DrawConfig drawConfig) {
@@ -117,282 +65,141 @@ namespace rbdt {
 /**##### PRIVATE MEMBERS FROM HERE #####**/
 
     void RubikProcessorImpl::applyImageProperties(const ImageProperties &properties) {
-        RubikProcessorImpl::inputImageFormat = properties.inputImageFormat;
-        switch (inputImageFormat) {
-            case RubikProcessor::ImageFormat::YUV_NV21:
-                cvColorConversionCode = cv::COLOR_YUV2RGBA_NV21;
-                break;
-            case RubikProcessor::ImageFormat::YUV_NV12:
-                cvColorConversionCode = cv::COLOR_YUV2RGBA_NV12;
-                break;
-            case RubikProcessor::ImageFormat::YUV_I420:
-                cvColorConversionCode = cv::COLOR_YUV2RGBA_I420;
-                break;
-            case RubikProcessor::ImageFormat::YUV_YV12:
-                cvColorConversionCode = cv::COLOR_YUV2RGBA_YV12;
-                break;
-            case RubikProcessor::ImageFormat::RGBA8888:
-                cvColorConversionCode = RubikProcessorImpl::NO_CONVERSION_NEEDED;
-                break;
+        originalWidth = properties.width;
+        originalHeight = properties.height;
+
+        // Take shortest side as the dimension since the image will be square cropped
+        frameDimension = originalWidth < originalHeight ? originalWidth : originalHeight;
+
+        needsCrop = originalWidth != originalHeight;
+        if (needsCrop) {
+            if (originalWidth > originalHeight) {
+                croppingRegion = cv::Rect((originalWidth - originalHeight) / 2, 0, frameDimension, frameDimension);
+            } else {
+                croppingRegion = cv::Rect(0, (originalHeight - originalWidth) / 2, frameDimension, frameDimension);
+            }
+        } else {
+            croppingRegion = cv::Rect();
         }
+
         rotation = properties.rotation;
-        imageWidth = properties.width;
-        imageHeight = properties.height;
-        // Rotated stuff
-        if (rotation == -90 || rotation == 90 || rotation == 270) {
-            rotatedImageHeight = imageWidth;
-            rotatedImageWidth = imageHeight;
-        } else {
-            rotatedImageHeight = imageHeight;
-            rotatedImageWidth = imageWidth;
-        }
 
-        // Largest side of original image
-        largestDimension = rotatedImageWidth > rotatedImageHeight ? rotatedImageWidth : rotatedImageHeight;
-        if (largestDimension > DEFAULT_DIMENSION) {
-            // Frame larger than expected, needs downscaling
-            upscalingRatio = (float) largestDimension / DEFAULT_DIMENSION;
-            downscalingRatio = (float) DEFAULT_DIMENSION / largestDimension;
-            if (largestDimension == rotatedImageHeight) {
-                // Height is the largest side
-                processingWidth = (int) round(rotatedImageHeight * downscalingRatio * ((float) rotatedImageWidth / rotatedImageHeight));
-                processingHeight = (int) round(rotatedImageHeight * downscalingRatio);
-            } else {
-                // Width is the largest side
-                processingWidth = (int) round(rotatedImageWidth * downscalingRatio);
-                processingHeight = (int) round(rotatedImageWidth * downscalingRatio * ((float) rotatedImageHeight / rotatedImageWidth));
-            }
-        } else if (largestDimension < DEFAULT_DIMENSION) {
-            // Frame smaller than expected, processing dimensions will be 320x240 or 240x320
-            upscalingRatio = 1.0f;
-            downscalingRatio = 1.0f;
-            processingHeight = largestDimension == rotatedImageHeight ? 320 : 240;
-            processingWidth = largestDimension == rotatedImageWidth ? 320 : 240;
-        } else {
-            upscalingRatio = 1.0f;
-            downscalingRatio = 1.0f;
-            processingHeight = rotatedImageHeight;
-            processingWidth = rotatedImageWidth;
-        }
-        needsResize = rotatedImageHeight != processingHeight || rotatedImageWidth != processingWidth;
+        scalingRatio = (float) DEFAULT_DIMENSION / frameDimension;
+        needsResize = scalingRatio != 1;
 
-        // Calculate offsets
-        if (inputImageFormat != RubikProcessor::ImageFormat::RGBA8888) {
-            // image is in one of the supported YUV formats
-            // IMPORTANT, when calculating offsets of YUV don't use rotated values because rotation will only happen after RGBA transformation
-            outputRgbaImageByteCount = imageWidth * imageHeight * 4;
-            outputRgbaImageOffset = imageWidth * (imageHeight + imageHeight / 2);
-            inputImageByteCount = imageWidth * (imageHeight + imageHeight / 2);
-            inputImageOffset = RubikProcessorImpl::NO_OFFSET;
+        // Calculate offsets: YUV -> RGBA -> Resized RGBA -> TOP RGBA -> LEFT RGBA -> RIGHT RGBA -> TOP GRAY -> LEFT GRAY -> RIGHT GRAY
+        frameYUVByteCount = originalWidth * (originalHeight + originalHeight / 2);
+        frameYUVOffset = RubikProcessorImpl::NO_OFFSET;
 
-            if (needsResize) {
-                processingRgbaImageOffset = outputRgbaImageByteCount + inputImageByteCount;
-                processingRgbaImageByteCount = processingHeight * processingWidth * 4;
-                processingGrayImageOffset = outputRgbaImageByteCount + inputImageByteCount + processingRgbaImageByteCount;
-                processingGrayImageSize = processingHeight * processingWidth;
+        frameRGBAByteCount = DEFAULT_DIMENSION * 8;
+        frameRGBAOffset = frameYUVOffset + frameYUVByteCount;
 
-                totalRequiredMemory = outputRgbaImageByteCount + inputImageByteCount + processingGrayImageSize
-                                      + processingRgbaImageByteCount;
-            } else {
-                totalRequiredMemory = outputRgbaImageByteCount + inputImageByteCount;
-            }
-        } else {
-            // image is RGBA
-            inputImageByteCount = outputRgbaImageByteCount = imageWidth * imageHeight * 4;
-            inputImageOffset = outputRgbaImageOffset = RubikProcessorImpl::NO_OFFSET;
+        faceRGBAByteCount = DEFAULT_FACE_DIMENSION * 8;
+        firstFaceRGBAOffset = frameRGBAOffset + frameRGBAByteCount;
 
-            if (needsResize) {
-                processingRgbaImageOffset = outputRgbaImageByteCount;
-                processingRgbaImageByteCount = processingHeight * processingWidth * 4;
-                processingGrayImageOffset = outputRgbaImageByteCount + processingRgbaImageByteCount;
-                processingGrayImageSize = processingHeight * processingWidth;
+        faceGrayByteCount = DEFAULT_FACE_DIMENSION * 2;
+        firstFaceGrayOffset = firstFaceRGBAOffset + (3 * faceRGBAByteCount);
 
-                totalRequiredMemory = outputRgbaImageByteCount + processingRgbaImageByteCount + processingGrayImageSize;
-            } else {
-                processingGrayImageSize = processingHeight * processingWidth;
-                processingGrayImageOffset = outputRgbaImageByteCount;
+        totalRequiredMemory = frameYUVByteCount + frameRGBAByteCount + (3 * faceRGBAByteCount) + (3 * faceGrayByteCount);
 
-                totalRequiredMemory = outputRgbaImageByteCount + processingGrayImageSize;
-            }
-        }
-        faceletsDetector->onFrameSizeSelected(processingWidth, processingHeight);
+        faceletsDetector->onFrameSizeSelected(DEFAULT_FACE_DIMENSION);
     }
 
+    // Color, crop,  resize, rotate, transform, gray, detect facelets, (if found) extract facelets from color, (later on) analyze colors
     std::vector<std::vector<RubikFacelet>> RubikProcessorImpl::findCubeInternal(const uint8_t *imageData) {
-        double processingStart = 0;
+        /* Frame rate stuff */
+        frameNumber++;
+        double processingStart = rbdt::getCurrentTimeMillis();
+        /* Frame rate stuff */
 
-        if (debuggable) {
-            // only calculate frame rate if the processor is debuggable
-            frameNumber++;
-            processingStart = rbdt::getCurrentTimeMillis();
-        }
+        // Allocate the mats
+        // IMPORTANT, processing color frames are in RGBA, if saved directly to disk for debugging convert with CV_RGB2BGR
+        cv::Mat frameYUV(originalHeight + originalHeight / 2, originalWidth, CV_8UC1,
+                         (uchar *) imageData);
+        cv::Mat frameRGBA(originalHeight, originalWidth, CV_8UC4,
+                          (uchar *) imageData + frameRGBAOffset);
+        cv::Mat topFaceRgba(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC4,
+                            (uchar *) imageData + firstFaceRGBAOffset);
+        cv::Mat leftFaceRgba(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC4,
+                             (uchar *) imageData + firstFaceRGBAOffset + faceRGBAByteCount);
+        cv::Mat rightFaceRgba(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC4,
+                              (uchar *) imageData + firstFaceRGBAOffset + (2 * faceRGBAByteCount));
+        cv::Mat topFaceGray(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC1,
+                            (uchar *) imageData + firstFaceGrayOffset);
+        cv::Mat leftFaceGray(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC1,
+                             (uchar *) imageData + firstFaceGrayOffset + faceGrayByteCount);
+        cv::Mat rightFaceGray(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC1,
+                              (uchar *) imageData + firstFaceGrayOffset + (2 * faceGrayByteCount));
 
-        // Allocate the output mat
-        cv::Mat outputFrameRgba(rotatedImageHeight, rotatedImageHeight, CV_8UC4, (uchar *) imageData + outputRgbaImageOffset);
+        // Color
+        cv::cvtColor(frameYUV, frameRGBA, cv::COLOR_YUV2RGBA_NV21);
+        /**/
+//        imageSaver->saveImage(frameRGBA, frameNumber, "_color");
+        /**/
 
-        // IMPORTANT, processing color frames are in RGBA, if saved directly to disk through ImageSaver colors channels
-        // will be mixed because it expects BGR, convert with CV_RGB2BGR before saving
-        cv::Mat processingFrameRgba;
-        cv::Mat processingFrameGrey;
-
-        if (inputImageFormat != RubikProcessor::ImageFormat::RGBA8888) {
-            // YUV image, need to convert the output & processing frames to RGBA8888
-            if (debuggable) {
-                LOG_DEBUG("NativeRubikProcessor", "Frame not RGB, needs conversion to RGBA.");
-            }
-
-            // Create a Mat from the YUV data and transform it into RGBA
-            cv::Mat frameYuv(imageHeight + imageHeight / 2, imageWidth, CV_8UC1, (uchar *) imageData);
-            cv::cvtColor(frameYuv, outputFrameRgba, cvColorConversionCode);
-
-            // #Added
-            rotateMat(outputFrameRgba, rotation);
-
-            if (needsResize) {
-                if (debuggable) {
-                    LOG_DEBUG("NativeRubikProcessor", "Resizing frame to processing size.");
-                    LOG_DEBUG("NativeRubikProcessor", "Image height: %d, width: %d. Processing height: %d, width: %d.",
-                              rotatedImageHeight, rotatedImageWidth, processingHeight, processingWidth);
-                }
-                // Allocate the processing mats
-                processingFrameRgba = cv::Mat(processingHeight, processingWidth, CV_8UC4, (uchar *) imageData + processingRgbaImageOffset);
-                processingFrameGrey = cv::Mat(processingHeight, processingWidth, CV_8UC1, (uchar *) imageData + processingGrayImageOffset);
-                // processing RGBA is obtained resizing output RGBA
-                cv::resize(outputFrameRgba, processingFrameRgba, cv::Size(processingWidth, processingHeight));
-                // Gray is obtained changing color space of the processing RGBA
-                cv::cvtColor(processingFrameRgba, processingFrameGrey, CV_RGBA2GRAY);
-            } else {
-                if (debuggable) {
-                    LOG_DEBUG("NativeRubikProcessor", "Frame already at processing size, no resize needed.");
-                }
-                // processing RGBA is just output RGBA
-                processingFrameRgba = cv::Mat(outputFrameRgba);
-                // Gray is obtained directly from the YUV
-                // TODO check if this rotated stuff works here
-                processingFrameGrey = frameYuv(cv::Rect(0, 0, rotatedImageWidth, rotatedImageHeight));
-            }
-
-        } else {
-            // input already in RGBA8888 format
-            if (debuggable) {
-                LOG_DEBUG("NativeRubikProcessor", "###################ALREADY RGBA");
-            }
-            // Allocate the processing grey mat
-            processingFrameGrey = cv::Mat(processingHeight, processingWidth, CV_8UC1, (uchar *) imageData + processingGrayImageOffset);
-
-            // #Added
-            rotateMat(outputFrameRgba, rotation);
-
-            if (needsResize) {
-                if (debuggable) {
-                    LOG_DEBUG("NativeRubikProcessor", "Needs resize.");
-                }
-                // Allocate the processing RGBA mat
-                processingFrameRgba = cv::Mat(processingHeight, processingWidth, CV_8UC4, (uchar *) imageData + processingRgbaImageOffset);
-                // processing RGBA is obtained resizing output RGBA
-                cv::resize(outputFrameRgba, processingFrameRgba, cv::Size(processingWidth, processingHeight));
-            } else {
-                if (debuggable) {
-                    LOG_DEBUG("NativeRubikProcessor", "No resize.");
-                }
-                // processing RGBA is just output RGBA
-                processingFrameRgba = cv::Mat(outputFrameRgba);
-            }
-
-            // Gray is obtained changing color space of the processing RGBA
-            cv::cvtColor(processingFrameRgba, processingFrameGrey, CV_RGBA2GRAY);
-        }
-
-        // #Added
-        auto verticalOffset = static_cast<float>((processingHeight-processingWidth) / 2.0);
-        auto lensOffset = static_cast<float>(processingWidth* 0.112);
-        std::vector<cv::Point2f> topFaceCorners;
-        // top corner
-        topFaceCorners.emplace_back(cv::Point2f(
-                static_cast<float>(processingWidth * 0.5),
-                static_cast<float>(processingWidth * 0.0459 + verticalOffset + lensOffset)));
-        // right corner
-        topFaceCorners.emplace_back(cv::Point2f(
-                static_cast<float>(processingWidth * 0.9366),
-                static_cast<float>(processingWidth * 0.2979 + verticalOffset)));
-        // left corner
-        topFaceCorners.emplace_back(cv::Point2f(
-                static_cast<float>(processingWidth * 0.0634),
-                static_cast<float>(processingWidth * 0.2979 + verticalOffset)));
-        // center
-        topFaceCorners.emplace_back(cv::Point2f(
-                static_cast<float>(processingWidth * 0.5),
-                static_cast<float>(processingWidth * 0.55 + verticalOffset)));
-        applyPerspectiveTransform(processingFrameRgba, processingFrameRgba, topFaceCorners, cv::Size(processingWidth, processingWidth));
-        applyPerspectiveTransform(processingFrameGrey, processingFrameGrey, topFaceCorners, cv::Size(processingWidth, processingWidth));
-//        cv::cvtColor(processingFrameRgba, processingFrameRgba, CV_RGBA2BGR);
-        imageSaver->saveImage(processingFrameRgba, frameNumber, "_perspective");
-        // End #Added
-
-
-        if (isDebuggable()) {
-            LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - Searching for facelets.");
-        }
-        std::vector<std::vector<RubikFacelet>> facelets = faceletsDetector->detect(
-                processingFrameGrey,
-                frameNumber);
-        if (facelets.size() != 0) {
-            if (isDebuggable()) {
-                LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - Found facelets!");
-            }
-            std::vector<std::vector<RubikFacelet::Color>> colors = detectFacetColors(
-                    processingFrameRgba,
-                    facelets);
-            if (isDebuggable()) {
-                LOG_DEBUG("NativeRubikProcessor",
-                          "RubikProcessor - Detected colors: {%c, %c, %c} {%c, %c, %c} {%c, %c, %c}\nApplying colors to facelets.",
-                          rbdt::colorIntToChar(colors[0][0]),
-                          rbdt::colorIntToChar(colors[0][1]),
-                          rbdt::colorIntToChar(colors[0][2]),
-                          rbdt::colorIntToChar(colors[1][0]),
-                          rbdt::colorIntToChar(colors[1][1]),
-                          rbdt::colorIntToChar(colors[1][2]),
-                          rbdt::colorIntToChar(colors[2][0]),
-                          rbdt::colorIntToChar(colors[2][1]),
-                          rbdt::colorIntToChar(colors[2][2])
-                );
-            }
-            applyColorsToResult(facelets, colors);
-
-            if (needsResize) {
-                if (isDebuggable()) {
-                    LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - Rescaling result.");
-                }
-                upscaleResult(facelets);
-            } else {
-                if (isDebuggable()) {
-                    LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - No rescaling needed.");
-                }
-            }
-            if (isDebuggable()) {
-                LOG_DEBUG("NativeRubikProcessor",
-                          "RubikProcessor - Drawing the result to the output frame.");
-            }
-            faceletsDrawController->drawResultToMat(outputFrameRgba, facelets);
-        } else {
-            if (isDebuggable()) {
-                LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - No cube found.");
-            }
-        }
-
-        //BASICALLY DONE
-        if (debuggable) {
-
-            double processingEnd = rbdt::getCurrentTimeMillis();
-            double delta = processingEnd - processingStart;
-            double fps = 1000 / delta;
-            frameRateSum += fps;
-            float frameRateAverage = (float) frameRateSum / frameNumber;
-
+        // Crop
+        if (needsCrop) {
             LOG_DEBUG("NativeRubikProcessor",
-                      "Done processing in this frame.\nframeNumber: %d,\nframeRate current frame: %.2f,\nframeRateAverage: %.2f,\nframeRate: %.2f. \nRubikProcessor - Returning the found facelets",
-                      frameNumber, fps, frameRateAverage, fps);
+                      "Cropping frame of width %d and height %d into a square of width %d, height %d, x %d and y %d.",
+                      frameRGBA.cols, frameRGBA.rows, croppingRegion.width, croppingRegion.height, croppingRegion.x, croppingRegion.y);
+            frameRGBA = frameRGBA(croppingRegion);
+            frameRGBA.cols = frameDimension;
+            frameRGBA.rows = frameDimension;
+        } else {
+            LOG_DEBUG("NativeRubikProcessor", "Frame already at square, no cropping needed.");
         }
+
+        // Resize
+        if (needsResize) {
+            LOG_DEBUG("NativeRubikProcessor", "Resizing frame to processing size. Image dimension: %d. Processing dimension: %d.",
+                      frameDimension, DEFAULT_DIMENSION);
+            cv::resize(frameRGBA, frameRGBA, cv::Size(DEFAULT_DIMENSION, DEFAULT_DIMENSION));
+        } else {
+            LOG_DEBUG("NativeRubikProcessor", "Frame already at processing size, no resize needed.");
+        }
+
+        // Rotate
+        rotateMat(frameRGBA, rotation);
+
+        /**/
+//        imageSaver->saveImage(frameRGBA, frameNumber, "_crop_resize_rotate");
+        /**/
+
+        // Perspective transform to extract the faces
+        extractFaces(frameRGBA, topFaceRgba, leftFaceRgba, rightFaceRgba);
+
+        // Get the gray frames
+        cv::cvtColor(topFaceRgba, topFaceGray, CV_RGBA2GRAY);
+        cv::cvtColor(leftFaceRgba, leftFaceGray, CV_RGBA2GRAY);
+        cv::cvtColor(rightFaceRgba, rightFaceGray, CV_RGBA2GRAY);
+
+        /**/
+//        imageSaver->saveImage(topFaceGray, frameNumber, "_gray_perspective_top");
+//        imageSaver->saveImage(leftFaceGray, frameNumber, "_gray_perspective_left");
+//        imageSaver->saveImage(rightFaceGray, frameNumber, "_gray_perspective_right");
+        /**/
+
+//        LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - Searching for facelets.");
+        std::vector<std::vector<RubikFacelet>> topFacelets = faceletsDetector->detect(topFaceGray, "top_face_", frameNumber);
+        std::vector<std::vector<RubikFacelet>> leftFacelets = faceletsDetector->detect(leftFaceGray, "left_face_", frameNumber);
+        std::vector<std::vector<RubikFacelet>> rightFacelets = faceletsDetector->detect(rightFaceGray, "right_face_", frameNumber);
+
+        std::vector<std::vector<RubikFacelet>> facelets(0);
+        if (!topFacelets.empty() && !leftFacelets.empty() && !rightFacelets.empty()) {
+            LOG_DEBUG("NativeRubikProcessor", "CUBE FOUND!.");
+            facelets = topFacelets;
+        }
+
+        /* Frame rate stuff */
+        double processingEnd = rbdt::getCurrentTimeMillis();
+        double delta = processingEnd - processingStart;
+        double fps = 1000 / delta;
+        frameRateSum += fps;
+        float frameRateAverage = (float) frameRateSum / frameNumber;
+        LOG_DEBUG("NativeRubikProcessor",
+                  "Done processing in this frame.\nframeNumber: %d,\nframeRate current frame: %.2f,\nframeRateAverage: %.2f,\nframeRate: %.2f. \nRubikProcessor - Returning the found facelets",
+                  frameNumber, fps, frameRateAverage, fps);
+        /* Frame rate stuff */
 
         return facelets;
     }
@@ -427,24 +234,16 @@ namespace rbdt {
                     } else {
                         whiteMinRatio = 0.5f;
                     }
-                    colors[i][j] = colorDetector->detectColor(stickerRoiHSV,
-                                                              whiteMinRatio,
-                                                              i * 10 + j,
-                                                              frameNumber);
+                    colors[i][j] = colorDetector->detectColor(stickerRoiHSV, whiteMinRatio, i * 10 + j, frameNumber);
                 } else {
                     colors[i][j] = RubikFacelet::Color::WHITE;
-                    if (debuggable) {
-                        LOG_DEBUG("NativeRubikProcessor",
-                                  "frameNumberOld: %d FOUND INVALID RECT WHEN DETECTING COLORS",
-                                  frameNumber);
-                    }
+                    LOG_DEBUG("NativeRubikProcessor", "frameNumberOld: %d FOUND INVALID RECT WHEN DETECTING COLORS", frameNumber);
                 }
             }
         }
         return colors;
     }
 
-    // #Added
     void RubikProcessorImpl::rotateMat(cv::Mat &matImage, int rotFlag) {
         if (rotFlag != 0 && rotFlag != 360) {
             if (rotFlag == 90) {
@@ -458,9 +257,78 @@ namespace rbdt {
             }
         }
     }
-    // #EndAdded
 
-    // #Added
+    void RubikProcessorImpl::extractFaces(cv::Mat &matImage, cv::Mat &topFace, cv::Mat &leftFace, cv::Mat &rightFace) {
+        auto lensOffset = static_cast<float>(DEFAULT_DIMENSION * 0.112);
+        // Top face: top, right, left, bottom
+        std::vector<cv::Point2f> topFaceCorners;
+        topFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.5),
+                static_cast<float>(DEFAULT_DIMENSION * 0.0151 + lensOffset))
+        );
+        topFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.9899),
+                static_cast<float>(DEFAULT_DIMENSION * 0.2979 ))
+        );
+        topFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.0101),
+                static_cast<float>(DEFAULT_DIMENSION * 0.2979 ))
+        );
+        topFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.5),
+                static_cast<float>(DEFAULT_DIMENSION * 0.5808))
+        );
+        applyPerspectiveTransform(matImage, topFace, topFaceCorners, cv::Size(DEFAULT_DIMENSION, DEFAULT_DIMENSION));
+
+        // Left face: top, right, left, bottom
+        std::vector<cv::Point2f> leftFaceCorners;
+        leftFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.0801),
+                static_cast<float>(DEFAULT_DIMENSION * 0.1768))
+        );
+        leftFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.57),
+                static_cast<float>(DEFAULT_DIMENSION * 0.4596))
+        );
+        // Apply lens offset scaled to each vector
+        leftFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.0801 + lensOffset * cos(30 * CV_PI / 180)),
+                static_cast<float>(DEFAULT_DIMENSION * 0.7425 - lensOffset * sin(30 * CV_PI / 180)))
+        );
+        leftFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.57),
+                static_cast<float>(DEFAULT_DIMENSION * 1.0253))
+        );
+        applyPerspectiveTransform(matImage, leftFace, leftFaceCorners, cv::Size(DEFAULT_DIMENSION, DEFAULT_DIMENSION));
+
+        // Right face: top, right, left, bottom
+        std::vector<cv::Point2f> rightFaceCorners;
+        rightFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.43),
+                static_cast<float>(DEFAULT_DIMENSION * 0.4596))
+        );
+        rightFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.9199),
+                static_cast<float>(DEFAULT_DIMENSION * 0.1768 ))
+        );
+        rightFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.43),
+                static_cast<float>(DEFAULT_DIMENSION * 1.0253))
+        );
+        // Apply lens offset scaled to each vector
+        rightFaceCorners.emplace_back(cv::Point2f(
+                static_cast<float>(DEFAULT_DIMENSION * 0.9199 - lensOffset * cos(30 * CV_PI / 180)),
+                static_cast<float>(DEFAULT_DIMENSION * 0.7425 - lensOffset * sin(30 * CV_PI / 180)))
+        );
+        applyPerspectiveTransform(matImage, rightFace, rightFaceCorners, cv::Size(DEFAULT_DIMENSION, DEFAULT_DIMENSION));
+
+        /**/
+//        imageSaver->saveImage(topFace, frameNumber, "_perspective_top");
+//        imageSaver->saveImage(leftFace, frameNumber, "_perspective_left");
+//        imageSaver->saveImage(rightFace, frameNumber, "_perspective_right");
+        /**/
+    }
+
     void RubikProcessorImpl::applyPerspectiveTransform(const cv::Mat &inputImage, cv::Mat &outputImage,
                                                        const std::vector<cv::Point2f> &inputPoints,
                                                        const cv::Size &outputSize) {
@@ -474,7 +342,7 @@ namespace rbdt {
         auto perspectiveMatrix = cv::getPerspectiveTransform(inputPoints, outputPoints);
         cv::warpPerspective(inputImage, outputImage, perspectiveMatrix, outputSize);
     }
-    // #EndAdded
+// #EndAdded
 
     void RubikProcessorImpl::applyColorsToResult(std::vector<std::vector<RubikFacelet>> &facelets,
                                                  const std::vector<std::vector<RubikFacelet::Color>> colors) {

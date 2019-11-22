@@ -75,10 +75,6 @@ public:
                                     const int regionInfo = -1,
                                     const int frameNr = -1) override;
 
-    void setDebuggable(bool debuggable) override;
-
-    bool isDebuggable() const override;
-
 private:
 
     /**
@@ -151,8 +147,6 @@ private:
     static constexpr int BUCKET_RED_MIN_THRESHOLD_2 = 0;
 
     static constexpr int BUCKET_RED_MAX_THRESHOLD_2 = 4;
-
-    bool debuggable = false;
 
     std::shared_ptr<ImageSaver> imageSaver;
 };

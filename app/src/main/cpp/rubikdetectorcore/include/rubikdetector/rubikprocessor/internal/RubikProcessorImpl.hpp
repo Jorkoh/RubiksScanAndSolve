@@ -73,21 +73,15 @@ namespace rbdt {
 
         void updateImageProperties(const ImageProperties &imageProperties) override;
 
-        void overrideInputFrameWithOutputFrame(const uint8_t *imageData) override;
-
         int getRequiredMemory() override;
 
-        int getOutputFrameBufferOffset() override;
+        int getFrameRGBABufferOffset() override;
 
-        int getOutputFrameByteCount() override;
+        int getFrameRGBAByteCount() override;
 
-        int getInputFrameByteCount() override;
+        int getFrameYUVByteCount() override;
 
-        int getInputFrameBufferOffset() override;
-
-        void setDebuggable(const bool isDebuggable) override;
-
-        bool isDebuggable() const override;
+        int getFrameYUVBufferOffset() override;
 
         /**
          * @copydoc RubikProcessor::updateDrawConfig()
@@ -127,27 +121,12 @@ namespace rbdt {
         std::vector<std::vector<RubikFacelet::Color>> detectFacetColors(const cv::Mat &currentFrame,
                                                                         const std::vector<std::vector<RubikFacelet>> facetModel);
 
-        // #Added
-        /**
-         *
-         * @param inputImage
-         * @param outputImage
-         * @param inputPoints
-         * @param outputSize
-         */
         void rotateMat(cv::Mat &matImage, int rotFlag);
-        // #EndAdded
 
-        // #Added
-        /**
-         *
-         * @param inputImage
-         * @param outputImage
-         * @param inputPoints
-         * @param outputSize
-         */
-        void applyPerspectiveTransform(const cv::Mat& inputFrame, cv::Mat& outputFrame, const std::vector<cv::Point2f>& inputPoints, const cv::Size &outputSize);
-        // #EndAdded
+        void extractFaces(cv::Mat &matImage, cv::Mat &topFace, cv::Mat &leftFace, cv::Mat &rightFace);
+
+        void applyPerspectiveTransform(const cv::Mat &inputFrame, cv::Mat &outputFrame, const std::vector<cv::Point2f> &inputPoints,
+                                       const cv::Size &outputSize);
 
         /**
          * Applies the colors in the color array, to the facelets in the facelets array.
@@ -184,10 +163,9 @@ namespace rbdt {
         */
         static constexpr int NO_CONVERSION_NEEDED = 2504;
 
-        /**
-         * Default expected largest dimension(i.e. max(width, height)) of the input frame.
-         */
-        static constexpr int DEFAULT_DIMENSION = 320;
+        static constexpr int DEFAULT_DIMENSION = 480;
+
+        static constexpr int DEFAULT_FACE_DIMENSION = 360;
 
         static constexpr int NO_OFFSET = 0;
 
@@ -221,27 +199,16 @@ namespace rbdt {
          */
         int frameRateSum = 0;
 
-        bool debuggable = false;
+        int originalWidth;
+
+        int originalHeight;
+
+        int frameDimension;
 
         /**
-         * input & output frame height
+         * region used to make square center crop
          */
-        int imageHeight;
-
-        /**
-         * input & output frame width
-         */
-        int imageWidth;
-
-        /**
-         * input & output frame height after rotation
-         */
-        int rotatedImageHeight;
-
-        /**
-         * input & output frame width after rotation
-         */
-        int rotatedImageWidth;
+        cv::Rect croppingRegion;
 
         /**
          * input frame rotation in degrees
@@ -258,22 +225,22 @@ namespace rbdt {
         /**
          * @see RubikProcessor::getOutputFrameBufferOffset()
          */
-        int outputRgbaImageOffset;
+        int frameRGBAOffset;
 
         /**
          * @see RubikProcessor::getOutputFrameByteCount()
          */
-        int outputRgbaImageByteCount;
+        int frameRGBAByteCount;
 
         /**
          * @see RubikProcessor::getInputFrameBufferOffset()
          */
-        int inputImageOffset;
+        int frameYUVOffset;
 
         /**
          * @see RubikProcessor::getInputFrameByteCount()
          */
-        int inputImageByteCount;
+        int frameYUVByteCount;
 
         /**
          * ratio used to upscale the detected facelets to the resolution of the output frame
@@ -283,22 +250,12 @@ namespace rbdt {
         /**
          * ratio used to downscale the input frame to a size fit for processing
          */
-        float downscalingRatio;
+        float scalingRatio;
 
         /**
-         * basically max(inputFrameWidth, inputFrameHeight)
+         * true if the given input frame is not square
          */
-        int largestDimension;
-
-        /**
-         * computed width of the processing frame width
-         */
-        int processingWidth;
-
-        /**
-         * computed width of the processing frame height
-         */
-        int processingHeight;
+        bool needsCrop;
 
         /**
          * true if the given input frame is too large, and should be downscaled to a lower resolution,
@@ -309,32 +266,22 @@ namespace rbdt {
         /**
          * the offset in the input array where the processing frame (RGBA) will be saved while processing
          */
-        int processingRgbaImageOffset;
+        int firstFaceRGBAOffset;
 
         /**
          * the size in bytes of the RGBA processing frame
          */
-        int processingRgbaImageByteCount;
+        int faceRGBAByteCount;
 
         /**
          * the offset in the input array where the processing frame (GRAYSCALE) will be saved while processing
          */
-        int processingGrayImageOffset;
+        int firstFaceGrayOffset;
 
         /**
          * the size in bytes of the GRAYSCALE processing frame
          */
-        int processingGrayImageSize;
-
-        /**
-         * the image format of the input frame.
-         */
-        RubikProcessor::ImageFormat inputImageFormat;
-
-        /**
-         * the opencv value passed to cv::cvtColor when changing color from the input frame format to the output frame format
-         */
-        int cvColorConversionCode;
+        int faceGrayByteCount;
     };
 
 } //namespace rbdt

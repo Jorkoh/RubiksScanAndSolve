@@ -13,9 +13,7 @@ RubikProcessorBuilder::RubikProcessorBuilder() :
         mRotation(DEFAULT_ROTATION),
         mFrameWidth(DEFAULT_WIDTH),
         mFrameHeight(DEFAULT_HEIGHT),
-        mFrameFormat(DEFAULT_FRAME_FORMAT),
         mDrawConfig(DrawConfig::Default()),
-        mDebuggable(false),
         mFaceletsDetector(nullptr),
         mColorDetector(nullptr),
         mImageSaver(nullptr) {}
@@ -28,11 +26,6 @@ RubikProcessorBuilder::RubikProcessorBuilder() :
 RubikProcessorBuilder &RubikProcessorBuilder::inputFrameSize(int width, int height) {
     mFrameWidth = width;
     mFrameHeight = height;
-    return *this;
-}
-
-RubikProcessorBuilder &RubikProcessorBuilder::inputFrameFormat(RubikProcessor::ImageFormat format) {
-    mFrameFormat = format;
     return *this;
 }
 
@@ -58,11 +51,6 @@ RubikProcessorBuilder &RubikProcessorBuilder::imageSaver(std::shared_ptr<ImageSa
     return *this;
 }
 
-RubikProcessorBuilder &RubikProcessorBuilder::debuggable(bool debuggable) {
-    mDebuggable = debuggable;
-    return *this;
-}
-
 RubikProcessor *RubikProcessorBuilder::build() {
 
     if (mFaceletsDetector == nullptr) {
@@ -81,13 +69,12 @@ RubikProcessor *RubikProcessorBuilder::build() {
             new FaceletsDrawController(mDrawConfig));
 
     RubikProcessor *rubikDetector = new RubikProcessor(
-            ImageProperties(mRotation, mFrameWidth, mFrameHeight, mFrameFormat),
+            ImageProperties(mRotation, mFrameWidth, mFrameHeight),
             std::move(mFaceletsDetector),
             std::move(mColorDetector),
             std::move(faceletsDrawController),
             mImageSaver);
 
-    rubikDetector->setDebuggable(mDebuggable);
     return rubikDetector;
 }
 

@@ -25,8 +25,7 @@ import java.nio.ByteBuffer;
  * <p>
  * To detect the facelets, use {@link #findCube(byte[])} or {@link #findCube(ByteBuffer)}. The parameter passed to a
  * <i>findCube</i> method, regardless whether if it's a byte[] or a ByteBuffer, is considered to be an <i>image data array</i>,
- * and needs to contain the image on which processing will occur (i.e. the <i>input image</i>). The data for this image needs to
- * be stored in a format specified by {@link ImageFormat}.
+ * and needs to contain the image on which processing will occur (i.e. the <i>input image</i>).
  * <p>
  * For each processed frame, regardless whether detection succeeds or not, the detector will write back into the original image
  * data array the ready-to-display, RGBA8888 version of the input image. This RGBA8888 version of the input image is regarded as
@@ -35,8 +34,8 @@ import java.nio.ByteBuffer;
  * Effectively, this means that after a call to one of the {@code findCube(...)} methods, the byte[] or ByteBuffer parameter
  * will contain:
  * <ul>
- * <li>the <i>input frame</i>, data format one of {@link ImageFormat} -  on which detection occurred;</li>
- * <li>the <i>result</i>, or <i>output</i> frame - converted to the {@link ImageFormat#ARGB_8888} format. This can then be easily converted to a {@link android.graphics.Bitmap}, and displayed.</li>
+ * <li>the <i>input frame</i>  on which detection occurred;</li>
+ * <li>the <i>result</i>, or <i>output</i> frame . This can then be easily converted to a {@link android.graphics.Bitmap}, and displayed.</li>
  * </ul>
  * If the set {@link DrawConfig} differs from {@link DrawConfig#DoNotDraw()}, then the <i>output frame</i> will also have the
  * drawn facelets.
@@ -230,7 +229,7 @@ public class RubikDetector {
      * @param properties updated {@link ImageProperties}
      */
     public void updateImageProperties(ImageProperties properties) {
-        applyImageProperties(properties.rotationDegrees, properties.width, properties.height, properties.inputImageFormat);
+        applyImageProperties(properties.rotationDegrees, properties.width, properties.height);
     }
 
     /**
@@ -250,21 +249,9 @@ public class RubikDetector {
      * @param rotation    rotation of the new input frame, in degrees
      * @param width       width of the new input & output frames, in pixels
      * @param height      height of the new input & output frames, in pixels
-     * @param imageFormat width of the new input & output frames, in pixels
      */
-    public void updateImageProperties(int rotation, int width, int height, @ImageFormat int imageFormat) {
-        applyImageProperties(rotation, width, height, imageFormat);
-    }
-
-    /**
-     * Sets the debuggable mode of this component on/off.
-     *
-     * @param debuggable {@code true} to enable debug mode, {@code false} to disable it.
-     */
-    public void setDebuggable(boolean debuggable) {
-        if (isActive()) {
-            nativeSetDebuggable(nativeProcessorRef, debuggable);
-        }
+    public void updateImageProperties(int rotation, int width, int height) {
+        applyImageProperties(rotation, width, height);
     }
 
     /**
@@ -289,12 +276,10 @@ public class RubikDetector {
      * {@link RubikFacelet} objects.
      * <p>
      * Given the <b>in/out</b> byte data array parameter, expects the input image data to be at offset {@link #getInputFrameBufferOffset()}, and to have
-     * a size equal to {@link #getInputFrameByteCount()}. The input image data is considered to be stored in the {@link ImageFormat} specified
-     * through the currently set {@link ImageProperties}.
+     * a size equal to {@link #getInputFrameByteCount()}.
      * <p>
      * Regardless whether a Rubik's Cube face is found or not, following this call the byte data array received as parameter will contain an
-     * additional image, called the <i>output frame</i>. This output frame is the {@link ImageFormat#ARGB_8888} format, ready-to-display, version of
-     * the input frame. The output frame will always have the same resolution as the input frame.
+     * additional image, called the <i>output frame</i>.
      * <p>
      * Additionally, if a draw mode other than {@link DrawConfig.DrawMode#DO_NOT_DRAW} is active, and facelets are found, the output frame
      * will also contain the drawn facelets.
@@ -338,12 +323,10 @@ public class RubikDetector {
      * {@link RubikFacelet} objects.
      * <p>
      * Given the <b>in/out</b> {@link ByteBuffer} array parameter, expects the input image data to be at offset {@link #getInputFrameBufferOffset()} in
-     * its backing byte array. It expects the input data to have a size equal to {@link #getInputFrameByteCount()}. The input image data is considered
-     * to be stored in the {@link ImageFormat} specified through the currently set {@link ImageProperties}.
+     * its backing byte array.
      * <p>
      * Regardless whether a Rubik's Cube face is found or not, following this call the ByteBuffer received as parameter will contain an
-     * additional image, called the <i>output frame</i>. This output frame is the {@link ImageFormat#ARGB_8888} format, ready-to-display, version of
-     * the input frame. The output frame will always have the same resolution as the input frame.
+     * additional image, called the <i>output frame</i>.
      * <p>
      * Additionally, if a draw mode other than {@link DrawConfig.DrawMode#DO_NOT_DRAW} is active, and facelets are found, the output frame
      * will also contain the drawn facelets.
@@ -405,7 +388,7 @@ public class RubikDetector {
     /**
      * Returns the required memory capacity of the byte array or {@link ByteBuffer} passed to one of the {@code findCube(...)} methods.
      * <p>
-     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int, int)}
+     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int)}
      *
      * @return a integer representing the required memory when searching for a cube, in a given frame.
      * @see RubikDetector
@@ -420,7 +403,7 @@ public class RubikDetector {
      * Given a byte array which contains, among others, the data for the input image (on which detection will be performed),
      * this returns the offset at which the input image data is stored within that byte array.
      * <p>
-     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int, int)}
+     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int)}
      *
      * @return the offset, in bytes, at which the input image data starts, within its byte array container.
      * @see RubikDetector
@@ -434,7 +417,7 @@ public class RubikDetector {
     /**
      * Gives the size of the input image data, in bytes.
      * <p>
-     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int, int)}
+     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int)}
      *
      * @return the size, in bytes, of the input image data.
      * @see RubikDetector
@@ -449,7 +432,7 @@ public class RubikDetector {
      * Given a byte array which contains, among others, the output image data, this returns the offset at which the output image data
      * is stored within that byte array.
      * <p>
-     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int, int)}
+     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int)}
      *
      * @return the offset, in bytes, at which the output image data starts, within its byte array container.
      * @see RubikDetector
@@ -463,7 +446,7 @@ public class RubikDetector {
     /**
      * Gives the size of the output image data, in bytes.
      * <p>
-     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int, int)}
+     * This value is recomputed with each call to {@link #updateImageProperties(ImageProperties)} or {@link #updateImageProperties(int, int, int)}
      *
      * @return the size, in bytes, of the output image data.
      * @see RubikDetector
@@ -472,18 +455,6 @@ public class RubikDetector {
      */
     public int getResultFrameByteCount() {
         return resultFrameByteCount;
-    }
-
-    /**
-     * Given the byte array parameter, which contains both the input & output frames, this method overrides the
-     * data at the input frame data with the data stored in the array as the output frame.
-     *
-     * @param data an array which contains both frames.
-     */
-    public void overrideInputFrameWithResultFrame(byte[] data) {
-        if (isActive()) {
-            nativeOverrideInputFrameWithResultFrame(nativeProcessorRef, data);
-        }
     }
 
     /**
@@ -533,7 +504,6 @@ public class RubikDetector {
                 properties.rotationDegrees,
                 properties.width,
                 properties.height,
-                properties.inputImageFormat,
                 drawConfig.getDrawMode(),
                 drawConfig.getStrokeWidth(),
                 drawConfig.isFillShape(),
@@ -547,11 +517,10 @@ public class RubikDetector {
      * @param rotation    new frame rotation, in degrees
      * @param width       new frame width, in pixels
      * @param height      new frame height, in pixels
-     * @param imageFormat an {@link ImageFormat} representing the format in which the input frame data is represented.
      */
-    private void applyImageProperties(int rotation, int width, int height, @ImageFormat int imageFormat) {
+    private void applyImageProperties(int rotation, int width, int height) {
         if (isActive()) {
-            nativeSetImageProperties(nativeProcessorRef, rotation, width, height, imageFormat);
+            nativeSetImageProperties(nativeProcessorRef, rotation, width, height);
             this.frameWidth = width;
             this.frameHeight = height;
             syncWithNativeObject();
@@ -614,7 +583,6 @@ public class RubikDetector {
      *
      * @param frameWidth       the width of the input & output frames, in pixels
      * @param frameHeight      the height of the input & output frames, in pixels
-     * @param inputImageFormat {@link ImageFormat} representing the format in which the binary image data is represented.
      * @param drawMode         {@link DrawConfig.DrawMode} which controls how the facelets are drawn, if found
      * @param strokeWidth      the stroke width, in pixels, used when drawing the found facelets.
      * @param fillShape        {@code true} if the facelets need to be drawn as filled shapes, {@code false} otherwise.
@@ -624,19 +592,10 @@ public class RubikDetector {
     private native long nativeCreateRubikDetector(int rotationDegrees,
                                                   int frameWidth,
                                                   int frameHeight,
-                                                  @ImageFormat int inputImageFormat,
                                                   @DrawConfig.DrawMode int drawMode,
                                                   int strokeWidth,
                                                   boolean fillShape,
                                                   @Nullable String storagePath);
-
-    /**
-     * Sets the debuggable mode on/off of the native RubikProcessor identified by the {@code nativeProcessorRef} parameter.
-     *
-     * @param nativeProcessorRef a long identifier which represents a native RubikProcessor.
-     * @param debuggable         {@code true} to enable debug mode on the native object, {@code false} otherwise
-     */
-    private native void nativeSetDebuggable(long nativeProcessorRef, boolean debuggable);
 
     /**
      * Searches for Rubik's Cube facelets in the frame stored in the byte[] parameter.
@@ -664,14 +623,6 @@ public class RubikDetector {
     private native int[] nativeFindCubeDataBuffer(long nativeProcessorRef, ByteBuffer imageDataBuffer);
 
     /**
-     * Overrides the bytes which contain the input frame data, with the data associated with the output frame.
-     *
-     * @param nativeProcessorRef a long identifier which represents a native RubikProcessor.
-     * @param data               byte[] which contains the input frame data, and has a length equal to the value returned by {@link #getRequiredMemory()}.
-     */
-    private native void nativeOverrideInputFrameWithResultFrame(long nativeProcessorRef, byte[] data);
-
-    /**
      * Frees the native memory associated with the native RubikProcessor instance identified by the {@code nativeProcessorRef}.
      *
      * @param nativeProcessorRef long identifier which represents a native RubikProcessor.
@@ -684,9 +635,8 @@ public class RubikDetector {
      * @param nativeProcessorRef long identifier which represents a native RubikProcessor.
      * @param width              new width, in pixels
      * @param height             new height, in pixels
-     * @param imageFormat        new image format, as a {@link ImageFormat}
      */
-    private native void nativeSetImageProperties(long nativeProcessorRef, int rotation, int width, int height, @ImageFormat int imageFormat);
+    private native void nativeSetImageProperties(long nativeProcessorRef, int rotation, int width, int height);
 
     /**
      * Updates the active draw config on the native object.
@@ -747,50 +697,11 @@ public class RubikDetector {
      */
 
     /**
-     * Represents the supported image formats. These are:
-     * <ul>
-     * <li>{@link ImageFormat#YUV_NV21}</li>
-     * <li>{@link ImageFormat#YUV_NV12}</li>
-     * <li>{@link ImageFormat#YUV_I420}</li>
-     * <li>{@link ImageFormat#YUV_YV12}</li>
-     * <li>{@link ImageFormat#ARGB_8888}</li>
-     * </ul>
-     */
-    @IntDef
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface ImageFormat {
-        /**
-         * YCrCb format used for images, which uses the NV21 encoding format.
-         */
-        int YUV_NV21 = 0,
-        /**
-         * YCrCb format used for images, which uses the NV12 encoding format.
-         */
-        YUV_NV12 = 1,
-        /**
-         * YCrCb format used for images, which uses the YUV_I420 encoding format.
-         */
-        YUV_I420 = 2,
-        /**
-         * YCrCb format used for images, which uses the YUV_YV12 encoding format.
-         */
-        YUV_YV12 = 3,
-        /**
-         * Generic RGBA format, with 8 bits per color sample.
-         */
-        ARGB_8888 = 4;
-    }
-
-    /**
      * Immutable class which specifies the properties of the input & output frames processed by the {@link RubikDetector}.
      * <p>
      * The properties declared by this class are the following:
      * - input & output frames size (width & height)
-     * - input frame format, as a {@link RubikDetector.ImageFormat}
-     * - output frame format, as a {@link RubikDetector.ImageFormat}
      * <p>
-     * Currently only the input frame format can be specified, since at the time being the only supported output frame format is
-     * as a {@link RubikDetector.ImageFormat#ARGB_8888}.
      */
     public static class ImageProperties {
 
@@ -810,31 +721,16 @@ public class RubikDetector {
         public final int height;
 
         /**
-         * Image format of the input frame.
-         */
-        @ImageFormat
-        public final int inputImageFormat;
-
-        /**
-         * Image format of the output frame.
-         */
-        @ImageFormat
-        public final int outputImageFormat;
-
-        /**
-         * Creates a new immutable ImageProperties object with the properties mentioned in the parameters, and with the output frame format set to {@link RubikDetector.ImageFormat#ARGB_8888}.
+         * Creates a new immutable ImageProperties object with the properties mentioned in the parameters.
          *
          * @param rotationDegrees  input rotation in degrees
          * @param width            input & output frame width, in pixels
          * @param height           input & output frame width, in pixels
-         * @param inputImageFormat - the format of the input frame, as a {@link RubikDetector.ImageFormat}.
          */
-        public ImageProperties(int rotationDegrees, int width, int height, @ImageFormat int inputImageFormat) {
+        public ImageProperties(int rotationDegrees, int width, int height) {
             this.rotationDegrees = rotationDegrees;
             this.width = width;
             this.height = height;
-            this.inputImageFormat = inputImageFormat;
-            this.outputImageFormat = ImageFormat.ARGB_8888;
         }
     }
 
@@ -846,7 +742,6 @@ public class RubikDetector {
      * This creates a RubikProcessor with the following defaults:
      * <ul>
      * <li>input frame size: 320 x 240;</li>
-     * <li>input frame format: {@link ImageFormat#YUV_NV21};</li>
      * <li>{@link DrawConfig}: {@link DrawConfig#Default()}</li>
      * <li>imageSavePath: null</li>
      * <li>debuggable: false</li>
@@ -856,13 +751,10 @@ public class RubikDetector {
      */
     public static class Builder {
         private DrawConfig drawConfig;
-        private boolean debuggable;
         private String imageSavePath = null;
-        private int inputFrameWidth = 320;
-        private int inputFrameHeight = 240;
+        private int inputFrameWidth = 640;
+        private int inputFrameHeight = 480;
         private int rotationDegrees = 0;
-        @ImageFormat
-        private int inputFrameFormat = ImageFormat.YUV_NV21;
 
         // #Added
 
@@ -902,22 +794,6 @@ public class RubikDetector {
 
         /**
          * <p>
-         * Defines the image format used by the input frame.
-         * </p>
-         * <p>
-         * This can later be changed through {@link RubikDetector#updateImageProperties(ImageProperties)}.
-         * </p>
-         *
-         * @param inputFrameFormat a {@link RubikDetector.ImageFormat} representing the format in which the input frame is stored.
-         * @return this {@link RubikDetector.Builder} instance to allow chaining.
-         */
-        public Builder inputFrameFormat(@ImageFormat int inputFrameFormat) {
-            this.inputFrameFormat = inputFrameFormat;
-            return this;
-        }
-
-        /**
-         * <p>
          * Specifies the {@link DrawConfig}. Drawing only occurs when the facelets are found. If you wish to not draw even
          * if the facelets are found, use {@link DrawConfig#DoNotDraw()}.
          * </p>
@@ -930,22 +806,6 @@ public class RubikDetector {
          */
         public Builder drawConfig(DrawConfig drawConfig) {
             this.drawConfig = drawConfig;
-            return this;
-        }
-
-        /**
-         * <p>
-         * Pass true to enable logging various debugging information, false otherwise.
-         * </p>
-         * <p>
-         * Default is false. This can be updated through RubikProcessor::setDebuggable()
-         * </p>
-         *
-         * @param debuggable {@code true} to set debugging on, {@code false} otherwise.
-         * @return this {@link RubikDetector.Builder} instance to allow chaining.
-         */
-        public Builder debuggable(boolean debuggable) {
-            this.debuggable = debuggable;
             return this;
         }
 
@@ -968,12 +828,11 @@ public class RubikDetector {
          * @see RubikDetector.Builder
          */
         public RubikDetector build() {
-            ImageProperties imageProperties = new ImageProperties(rotationDegrees, inputFrameWidth, inputFrameHeight, inputFrameFormat);
+            ImageProperties imageProperties = new ImageProperties(rotationDegrees, inputFrameWidth, inputFrameHeight);
             if (drawConfig == null) {
                 drawConfig = DrawConfig.Default();
             }
             RubikDetector rubikDetector = new RubikDetector(imageProperties, drawConfig, imageSavePath);
-            rubikDetector.setDebuggable(debuggable);
             return rubikDetector;
         }
     }

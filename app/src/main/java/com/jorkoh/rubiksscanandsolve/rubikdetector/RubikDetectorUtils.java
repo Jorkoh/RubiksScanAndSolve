@@ -148,28 +148,6 @@ public class RubikDetectorUtils {
     }
 
     /**
-     * Given an Android {@link ImageFormat}, returns a RubikDetector equivalent {@link RubikDetector.ImageFormat}.
-     *
-     * @param imageFormatAndroid an Android {@link ImageFormat}
-     * @return the equivalent {@link RubikDetector.ImageFormat}.
-     */
-    @RubikDetector.ImageFormat
-    public static int convertAndroidImageFormat(int imageFormatAndroid) {
-        switch (imageFormatAndroid) {
-            case ImageFormat.NV21:
-                return RubikDetector.ImageFormat.YUV_NV21;
-            case ImageFormat.YUV_420_888:
-                return RubikDetector.ImageFormat.YUV_I420;
-            case ImageFormat.YV12:
-                return RubikDetector.ImageFormat.YUV_YV12;
-            case ImageFormat.FLEX_RGBA_8888:
-                return RubikDetector.ImageFormat.ARGB_8888;
-            default:
-                throw new IllegalArgumentException("Unsupported image format requested.");
-        }
-    }
-
-    /**
      * Utility method to print the colors of the detected facelets as a formatted string.
      * <p>
      * Useful for printing.

@@ -67,10 +67,6 @@ public:
                                     const int regionInfo = -1,
                                     const int frameNr = -1) override;
 
-    void setDebuggable(const bool debuggable) override;
-
-    bool isDebuggable() const override;
-
 private:
     /**
      * Pointer to private implementation (PIMPL Pattern)

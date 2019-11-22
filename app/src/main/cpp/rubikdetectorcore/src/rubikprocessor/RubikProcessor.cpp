@@ -22,9 +22,7 @@ namespace rbdt {
                                    imageSaver))) {}
 
     RubikProcessor::~RubikProcessor() {
-        if (isDebuggable()) {
-            LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - destructor.");
-        }
+        LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - destructor.");
     }
 
     std::vector<std::vector<RubikFacelet>> RubikProcessor::process(const uint8_t *imageData) {
@@ -35,36 +33,24 @@ namespace rbdt {
         behavior->updateImageProperties(imageProperties);
     }
 
-    void RubikProcessor::overrideInputFrameWithOutputFrame(const uint8_t *imageData) {
-        behavior->overrideInputFrameWithOutputFrame(imageData);
-    }
-
-    void RubikProcessor::setDebuggable(const bool debuggable) {
-        behavior->setDebuggable(debuggable);
-    }
-
-    bool RubikProcessor::isDebuggable() const {
-        return behavior->isDebuggable();
-    }
-
     int RubikProcessor::getRequiredMemory() {
         return behavior->getRequiredMemory();
     }
 
-    int RubikProcessor::getOutputFrameBufferOffset() {
-        return behavior->getOutputFrameBufferOffset();
+    int RubikProcessor::getFrameRGBABufferOffset() {
+        return behavior->getFrameRGBABufferOffset();
     }
 
-    int RubikProcessor::getOutputFrameByteCount() {
-        return behavior->getOutputFrameByteCount();
+    int RubikProcessor::getFrameRGBAByteCount() {
+        return behavior->getFrameRGBAByteCount();
     }
 
-    int RubikProcessor::getInputFrameByteCount() {
-        return behavior->getInputFrameByteCount();
+    int RubikProcessor::getFrameYUVByteCount() {
+        return behavior->getFrameYUVByteCount();
     }
 
-    int RubikProcessor::getInputFrameBufferOffset() {
-        return behavior->getInputFrameBufferOffset();
+    int RubikProcessor::getFrameYUVBufferOffset() {
+        return behavior->getFrameYUVBufferOffset();
     }
 
     void RubikProcessor::updateDrawConfig(DrawConfig drawConfig) {

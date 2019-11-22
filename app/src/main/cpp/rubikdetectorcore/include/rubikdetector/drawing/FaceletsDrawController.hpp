@@ -7,7 +7,6 @@
 
 #include "../data/config/DrawConfig.hpp"
 #include "../data/processing/RubikFacelet.hpp"
-#include "../misc/Debuggable.hpp"
 
 namespace cv {
 class Mat;
@@ -22,7 +21,7 @@ namespace rbdt {
  *
  * Currently this object does not support to draw the facelets as filled rectangles.
  */
-class FaceletsDrawController : Debuggable {
+class FaceletsDrawController {
 
 public:
     /**
@@ -50,14 +49,8 @@ public:
      */
     void updateDrawConfig(DrawConfig newDrawConfig);
 
-    void setDebuggable(const bool debuggable) override;
-
-    bool isDebuggable() const override;
-
 private:
     DrawConfig drawConfig;
-
-    bool debuggable;
 
     void drawFoundFaceletsCircles(cv::Mat &outputFrame,
                                   const std::vector<std::vector<RubikFacelet>> facetModel,

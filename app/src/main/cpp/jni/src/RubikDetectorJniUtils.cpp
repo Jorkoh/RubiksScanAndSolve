@@ -25,23 +25,6 @@ rbdt::RubikFacelet::Color colorFromInt(const int val) {
     }
 }
 
-rbdt::RubikProcessor::ImageFormat imageFormatFromInt(const int val){
-    switch (val) {
-        case JNI_IMAGE_FORMAT_YUV_NV21:
-            return rbdt::RubikProcessor::ImageFormat::YUV_NV21;
-        case JNI_IMAGE_FORMAT_YUV_NV12:
-            return rbdt::RubikProcessor::ImageFormat::YUV_NV12;
-        case JNI_IMAGE_FORMAT_YUV_I420:
-            return rbdt::RubikProcessor::ImageFormat::YUV_I420;
-        case JNI_IMAGE_FORMAT_YUV_YV12:
-            return rbdt::RubikProcessor::ImageFormat::YUV_YV12;
-        case JNI_IMAGE_FORMAT_RGBA8888:
-            return rbdt::RubikProcessor::ImageFormat::RGBA8888;
-        default:
-            return rbdt::RubikProcessor::ImageFormat::YUV_NV21;
-    }
-}
-
 rbdt::DrawConfig::DrawMode drawModeFromInt(const int val) {
     switch (val) {
         case JNI_DRAW_MODE_DO_NOT_DRAW:

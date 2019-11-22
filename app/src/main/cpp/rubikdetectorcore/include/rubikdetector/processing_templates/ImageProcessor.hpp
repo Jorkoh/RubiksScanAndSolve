@@ -5,8 +5,6 @@
 #ifndef RUBIKDETECTOR_IMAGEPROCESSOR_HPP
 #define RUBIKDETECTOR_IMAGEPROCESSOR_HPP
 
-#include "../misc/Debuggable.hpp"
-
 namespace rbdt {
 
 /**
@@ -32,9 +30,6 @@ namespace rbdt {
  *  - the expected location of the <b>output</b> frame array, in the array passed to ImageProcessor::process().
  *    * this is achieved through ImageProcessor::getOutputFrameBufferOffset().
  *
- * Additionally, it the processor also exposes the capability of the input frame to be overriden by the output frame, through
- * ImageProcessor::overrideInputFrameWithOutputFrame().
- *
  * @tparam INPUT_TYPE the type of the input frame data. This can be either a data array (e.g. <i>const uint8_t *</i>) or a data object which
  * contains a data array holding the image data.
  * @tparam IMAGE_PROPERTIES_TYPE type of the data class that holds the image properties of the input & output frame. This is expected to contain data such as:
@@ -42,7 +37,7 @@ namespace rbdt {
  * @tparam RESULT_TYPE the type of the result
  */
 template<typename INPUT_TYPE, typename IMAGE_PROPERTIES_TYPE, typename RESULT_TYPE>
-class ImageProcessor : public Debuggable {
+class ImageProcessor {
 public:
 
     /**
@@ -82,27 +77,6 @@ public:
     virtual void updateImageProperties(IMAGE_PROPERTIES_TYPE imageProperties)=0;
 
     /**
-     * Overrides the input frame data from the INPUT_TYPE received as a parameter, with the output frame data.
-     *
-     * If the input & output frames are stored in different image formats, then the output frame  is first converted to the format of the
-     * input frame, and only after its data is copied over the input frame data.
-     *
-     * This allocates no new memory, i.e. the converted output frame will be written in the INPUT_TYPE's array received as a parameter at
-     * offset ImageProcessor::getInputFrameBufferOffset() and will have ImageProcessor::getInputFrameByteCount() bytes.
-     *
-     * @param imageData INPUT_TYPE which is expected to be either a byte array (or a data object which has a byte array) that stores at least the
-     * input & output frame data, has a size equal to ImageProcessor::getRequiredMemory() and has the input & output frames located at the locations
-     * provided by the methods in the references
-     *
-     * @see ImageProcessor::process()
-     * @see ImageProcessor::getInputFrameByteCount()
-     * @see ImageProcessor::getInputFrameBufferOffset()
-     * @see ImageProcessor::getOutputFrameByteCount()
-     * @see ImageProcessor::getOutputFrameBufferOffset()
-     */
-    virtual void overrideInputFrameWithOutputFrame(INPUT_TYPE imageData)=0;
-
-    /**
      * Returns the total required size in bytes of the array passed to ImageProcessor::process(), given the ImageProperties currently set on the Processor.
      *
      * The value returned here is recomputed each time ImageProcessor::updateImageProperties() is called.
@@ -118,7 +92,7 @@ public:
      *
      * @return int frame offset, in bytes.
      */
-    virtual int getInputFrameBufferOffset()=0;
+    virtual int getFrameYUVBufferOffset()=0;
 
     /**
      * Returns the expected size in bytes of the input frame.
@@ -127,7 +101,7 @@ public:
      *
      * @return int expected input frame size, in bytes.
      */
-    virtual int getInputFrameByteCount()=0;
+    virtual int getFrameYUVByteCount()=0;
 
     /**
      * Returns the output data offset in bytes, relative to the start of the byte array provided in ImageProcessor::process().
@@ -136,7 +110,7 @@ public:
      *
      * @return int frame offset, in bytes.
      * */
-    virtual int getOutputFrameBufferOffset()=0;
+    virtual int getFrameRGBABufferOffset()=0;
 
     /**
      * Returns the expected size in bytes of the output frame.
@@ -145,7 +119,7 @@ public:
      *
      * @return int expected output frame size, in bytes.
      */
-    virtual int getOutputFrameByteCount()=0;
+    virtual int getFrameRGBAByteCount()=0;
 
 };
 } //end namespace rbdt

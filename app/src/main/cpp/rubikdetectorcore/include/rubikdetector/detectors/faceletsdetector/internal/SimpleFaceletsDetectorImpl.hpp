@@ -75,17 +75,12 @@ public:
     /**
      * @copydoc SimpleFaceletsDetector::detect()
      */
-    std::vector<std::vector<RubikFacelet>> detect(cv::Mat &frameGray,
-                                                  const int frameNumber = 0) override;
+    std::vector<std::vector<RubikFacelet>> detect(cv::Mat &frameGray, const std::string &tag, const int frameNumber = 0) override;
 
     /**
      * @copydoc SimpleFaceletsDetector::onFrameSizeSelected()
      */
-    void onFrameSizeSelected(int processingWidth, int processingHeight) override;
-
-    void setDebuggable(const bool isDebuggable) override;
-
-    bool isDebuggable() const override;
+    void onFrameSizeSelected(int processingDimension) override;
 
 private:
 
@@ -182,7 +177,7 @@ private:
      * @param [in] cubeFacet a 2D std::vector representing an incomplete model of a Rubik's Cube facet.
      * @return <b>true</b> if the model is sufficient to define a Rubik's Facet, <b>false</b> otherwise.
      */
-    bool verifyIfCubeFound(const std::vector<std::vector<Circle>> &cubeFacet) const;
+    bool verifyIfFaceFound(const std::vector<std::vector<Circle>> &cubeFacet) const;
 
     /**
      * Fills with estimated facelets the missing facelets in an incomplete Rubik's Cube facet model.
@@ -202,26 +197,23 @@ private:
     std::vector<std::vector<RubikFacelet>> createResult(
             const std::vector<std::vector<Circle>> &model);
 
-    void saveWholeFrame(const cv::Mat &currentFrame, int frameNr) const;
+    void saveWholeFrame(const cv::Mat &currentFrame, int frameNr, const std::string &tag) const;
 
-    cv::Mat saveFilteredRectangles(const cv::Mat &currentFrame,
-                                   const std::vector<cv::RotatedRect> &filteredRectangles,
-                                   int frameNr) const;
+    cv::Mat drawFilteredRectangles(const cv::Mat &currentFrame,
+                                   const std::vector<cv::RotatedRect> &filteredRectangles) const;
 
     void saveDebugData(const cv::Mat &frame,
                        const std::vector<cv::RotatedRect> &filteredRectangles,
                        const Circle &referenceCircle,
                        const std::vector<Circle> &potentialFacelets,
                        const std::vector<Circle> &estimatedFacelets,
-                       const std::vector<std::vector<RubikFacelet::Color>> colors,
-                       const int frameNumber);
+                       const int frameNumber,
+                       const std::string &tag);
 
     void drawRectangleToMat(const cv::Mat &currentFrame, const cv::RotatedRect &rotatedRect,
                             const cv::Scalar color = cv::Scalar(0, 255, 0)) const;
 
-    static constexpr float MIN_VALID_SHAPE_TO_IMAGE_AREA_RATIO = 0.0025f;
-
-    static constexpr float MIN_VALID_SHAPE_TO_IMAGE_SIDE_SIZE_RATIO = 0.25f;
+    static constexpr float MIN_VALID_SHAPE_TO_IMAGE_AREA_RATIO = 0.4f;
 
     static constexpr int CIRCLE_DISTANCE_BUFFER = 2 * 10;
 
@@ -236,10 +228,6 @@ private:
     static constexpr int MIN_POTENTIAL_FACELETS_REQUIRED = 4;
 
     std::shared_ptr<ImageSaver> imageSaver;
-
-    bool debuggable = false;
-
-    int maxShapeSideSize;
 
     int minValidShapeArea;
 

@@ -6,7 +6,6 @@
 #define RUBIKDETECTOR_IMAGESAVER_HPP
 
 #include <string>
-#include "../misc/Debuggable.hpp"
 
 namespace cv {
 class Mat;
@@ -16,7 +15,7 @@ namespace rbdt {
 /**
  * Object capable of saving arbitrary cv::Mat objects to disk, primarily for debugging purposes.
  */
-class ImageSaver : Debuggable {
+class ImageSaver {
 public:
     /**
      * Constructor.
@@ -53,13 +52,8 @@ public:
      */
     bool saveImage(const cv::Mat &mat, const int frameNumber, const std::string regionName);
 
-    void setDebuggable(const bool debuggable) override;
-
-    bool isDebuggable() const override;
-
 private:
     const std::string path;
-    bool debuggable;
 };
 
 } //end namespace rbdt

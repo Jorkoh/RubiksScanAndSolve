@@ -71,13 +71,6 @@ class RubikProcessor
 public:
 
     /**
-    * Defines the image formats that need to be supported by the processor for input & output frames.
-    */
-    enum class ImageFormat {
-        YUV_NV21, YUV_NV12, YUV_I420, YUV_YV12, RGBA8888
-    };
-
-    /**
      * Virtual destructor. Only needed for debug logging.
      */
     virtual ~RubikProcessor();
@@ -102,21 +95,15 @@ public:
 
     void updateImageProperties(const ImageProperties &imageProperties) override;
 
-    void overrideInputFrameWithOutputFrame(const uint8_t *imageData) override;
-
     int getRequiredMemory() override;
 
-    int getOutputFrameBufferOffset() override;
+    int getFrameRGBABufferOffset() override;
 
-    int getOutputFrameByteCount() override;
+    int getFrameRGBAByteCount() override;
 
-    int getInputFrameByteCount() override;
+    int getFrameYUVByteCount() override;
 
-    int getInputFrameBufferOffset() override;
-
-    void setDebuggable(const bool debuggable) override;
-
-    bool isDebuggable() const override;
+    int getFrameYUVBufferOffset() override;
 
     /**
      * Updates the DrawConfig of this RubikProcessor.

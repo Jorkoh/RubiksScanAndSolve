@@ -4,11 +4,12 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.graphics.ImageFormat
 import android.graphics.PorterDuff
 import android.hardware.display.DisplayManager
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
-import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
@@ -28,6 +29,7 @@ class ScanFragment : Fragment() {
     private var displayId = -1
     private var preview: Preview? = null
     private var imageAnalyzer: ImageAnalysis? = null
+    private var imageCapture: ImageCapture? = null
 
     private lateinit var displayManager: DisplayManager
     private val displayListener = object : DisplayManager.DisplayListener {
@@ -37,13 +39,26 @@ class ScanFragment : Fragment() {
             if (displayId == this@ScanFragment.displayId) {
                 preview?.setTargetRotation(view.display.rotation)
                 imageAnalyzer?.setTargetRotation(view.display.rotation)
+                imageCapture?.setTargetRotation(view.display.rotation)
             }
         } ?: Unit
     }
 
+    private val detectorListener: DetectorListener = { detected  ->
+        view_finder_overlay.post {
+            view_finder_overlay.background.setColorFilter(
+                if (detected) {
+                    Color.GREEN
+                } else {
+                    Color.RED
+                },
+                PorterDuff.Mode.SRC_ATOP
+            )
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Mark this as a retain fragment, so the lifecycle does not get restarted on config change
         retainInstance = true
     }
 
@@ -52,9 +67,18 @@ class ScanFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_scan, container, false).apply {
-            this.button.setOnClickListener {
+            button_scan.setOnClickListener {
                 //TODO temporary stuff
                 (imageAnalyzer?.analyzer as CubeDetectorAnalyzer).detectFrame = true
+            }
+            button_photo.setOnClickListener {
+                imageCapture?.takePicture(Executors.newCachedThreadPool(), object : ImageCapture.OnImageCapturedListener() {
+                    override fun onCaptureSuccess(image: ImageProxy?, rotationDegrees: Int) {
+                        // It does return YUV! Won't be used tho..
+                        Log.d("TEST", "Image format: ${image?.format}")
+                        super.onCaptureSuccess(image, rotationDegrees)
+                    }
+                })
             }
         }
     }
@@ -62,16 +86,12 @@ class ScanFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Every time the orientation of device changes, recompute layout
         displayManager = view_finder.context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
         displayManager.registerDisplayListener(displayListener, null)
 
-        // Wait for the views to be properly laid out
         view_finder.post {
-            // Keep track of the display in which this view is attached
             displayId = view_finder.display.displayId
 
-            // Build UI controls and bind all camera use cases
             updateCameraUI()
             enableScannerWithPermissionCheck()
         }
@@ -84,54 +104,38 @@ class ScanFragment : Fragment() {
     @SuppressLint("RestrictedApi")
     @NeedsPermission(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
     fun enableScanner() {
-        // Set up the view finder use case to display camera preview
+        // ViewFinder
         val viewFinderConfig = PreviewConfig.Builder().apply {
             setLensFacing(CameraX.LensFacing.BACK)
-            // We request aspect ratio but no resolution to let CameraX optimize our use cases
             setTargetAspectRatio(AspectRatio.RATIO_4_3)
-            // Set initial target rotation, we will have to call this again if rotation changes
-            // during the lifecycle of this use case
             setTargetRotation(view_finder.display.rotation)
         }.build()
-
-        // Use the auto-fit preview builder to automatically handle size and orientation changes
         preview = AutoFitPreviewBuilder.build(viewFinderConfig, view_finder)
 
-        // Setup image analysis pipeline that computes average pixel luminance in real time
+        // Analyzer
         val analyzerConfig = ImageAnalysisConfig.Builder().apply {
             setLensFacing(CameraX.LensFacing.BACK)
-            // We request aspect ratio but no resolution to let CameraX optimize our use cases
             setTargetAspectRatio(AspectRatio.RATIO_4_3)
-            // In our analysis, we care more about the latest image than analyzing *every* image
-            setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
-            // Set initial target rotation, we will have to call this again if rotation changes
-            // during the lifecycle of this use case
             setTargetRotation(view_finder.display.rotation)
+            setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
         }.build()
 
         imageAnalyzer = ImageAnalysis(analyzerConfig).apply {
-            setAnalyzer(
-                Executors.newCachedThreadPool(),
-                CubeDetectorAnalyzer { detected, imageWithDetection ->
-                    view_finder_overlay.post {
-                        view_finder_overlay.background.setColorFilter(
-                            if (detected) {
-                                Color.GREEN
-                            } else {
-                                Color.RED
-                            },
-                            PorterDuff.Mode.SRC_ATOP
-                        )
-                        if (detected) {
-                            result_image.setImageBitmap(imageWithDetection)
-                        }
-                    }
-                }
-            )
+            setAnalyzer(Executors.newCachedThreadPool(), CubeDetectorAnalyzer(detectorListener))
         }
 
-        // Apply declared configs to CameraX using the same lifecycle owner
-        CameraX.bindToLifecycle(viewLifecycleOwner, preview, imageAnalyzer)
+        // Set up the capture use case to allow users to take photos
+        val imageCaptureConfig = ImageCaptureConfig.Builder().apply {
+            setLensFacing(CameraX.LensFacing.BACK)
+            setBufferFormat(ImageFormat.YUV_420_888)
+            setCaptureMode(ImageCapture.CaptureMode.MAX_QUALITY)
+            setTargetAspectRatio(AspectRatio.RATIO_4_3)
+            setTargetRotation(view_finder.display.rotation)
+        }.build()
+
+        imageCapture = ImageCapture(imageCaptureConfig)
+
+        CameraX.bindToLifecycle(viewLifecycleOwner, preview, imageAnalyzer, imageCapture)
     }
 
     override fun onDestroyView() {

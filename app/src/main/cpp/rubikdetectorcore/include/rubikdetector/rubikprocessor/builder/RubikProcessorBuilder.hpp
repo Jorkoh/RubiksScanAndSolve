@@ -74,16 +74,6 @@ namespace rbdt {
         RubikProcessorBuilder &inputFrameSize(int width, int height);
 
         /**
-         * Defines the image format used by the input frame.
-         *
-         * This can later be changed through RubikProcessor::updateImageProperties().
-         *
-         * @param [in] format a RubikProcessor::ImageFormat representing the format in which the input frame is stored
-         * @return the same RubikProcessorBuilder instance
-         */
-        RubikProcessorBuilder &inputFrameFormat(RubikProcessor::ImageFormat format);
-
-        /**
          * Specifies the DrawConfig. Drawing only occurs when the facelets are found. If you wish to not draw even
          * if the facelets are found, use DrawConfig::DoNotDraw();
          *
@@ -128,16 +118,6 @@ namespace rbdt {
         RubikProcessorBuilder &imageSaver(std::shared_ptr<ImageSaver> imageSaver);
 
         /**
-         * Pass true to enable logging various debugging information, false otherwise.
-         *
-         * Default is false. This can be updated through RubikProcessor::setDebuggable()
-         *
-         * @param [in] debuggable
-         * @return the same RubikProcessorBuilder instance
-         */
-        RubikProcessorBuilder &debuggable(bool debuggable);
-
-        /**
          * Builds a RubikProcessor with the configuration provided through this builder.
          * @return RubikProcessor
          */
@@ -147,19 +127,15 @@ namespace rbdt {
 
         static constexpr int DEFAULT_ROTATION = 0;
 
-        static constexpr int DEFAULT_WIDTH = 320;
+        static constexpr int DEFAULT_WIDTH = 640;
 
-        static constexpr int DEFAULT_HEIGHT = 240;
-
-        static constexpr RubikProcessor::ImageFormat DEFAULT_FRAME_FORMAT = RubikProcessor::ImageFormat::YUV_NV21;
+        static constexpr int DEFAULT_HEIGHT = 480;
 
         int mRotation;
 
         int mFrameWidth;
 
         int mFrameHeight;
-
-        RubikProcessor::ImageFormat mFrameFormat;
 
         DrawConfig mDrawConfig;
 
@@ -168,8 +144,6 @@ namespace rbdt {
         std::unique_ptr<RubikFaceletsDetector> mFaceletsDetector;
 
         std::shared_ptr<ImageSaver> mImageSaver;
-
-        bool mDebuggable;
     };
 
 } //end namespace rbdt

@@ -8,32 +8,22 @@
 
 namespace rbdt {
 
-HistogramColorDetector::HistogramColorDetector() : HistogramColorDetector(nullptr) {}
+    HistogramColorDetector::HistogramColorDetector() : HistogramColorDetector(nullptr) {}
 
-HistogramColorDetector::HistogramColorDetector(std::shared_ptr<ImageSaver> imageSaver)
-        : colorDetectorImpl(
-        std::unique_ptr<HistogramColorDetectorImpl>(
-                new HistogramColorDetectorImpl(imageSaver))) {}
+    HistogramColorDetector::HistogramColorDetector(std::shared_ptr<ImageSaver> imageSaver)
+            : colorDetectorImpl(
+            std::unique_ptr<HistogramColorDetectorImpl>(
+                    new HistogramColorDetectorImpl(imageSaver))) {}
 
-HistogramColorDetector::~HistogramColorDetector() {
-    if (isDebuggable()) {
+    HistogramColorDetector::~HistogramColorDetector() {
         LOG_DEBUG("RubikJniPart.cpp", "HistogramColorDetector - destructor.");
     }
-}
 
-RubikFacelet::Color HistogramColorDetector::detectColor(const cv::Mat &image,
-                                                        const float whiteRatio,
-                                                        const int regionInfo,
-                                                        const int frameNr) {
-    return colorDetectorImpl->detectColor(image, whiteRatio, regionInfo, frameNr);
-}
-
-void HistogramColorDetector::setDebuggable(const bool debuggable) {
-    colorDetectorImpl->setDebuggable(debuggable);
-}
-
-bool HistogramColorDetector::isDebuggable() const {
-    return colorDetectorImpl->isDebuggable();
-}
+    RubikFacelet::Color HistogramColorDetector::detectColor(const cv::Mat &image,
+                                                            const float whiteRatio,
+                                                            const int regionInfo,
+                                                            const int frameNr) {
+        return colorDetectorImpl->detectColor(image, whiteRatio, regionInfo, frameNr);
+    }
 
 } //end namespace rbdt

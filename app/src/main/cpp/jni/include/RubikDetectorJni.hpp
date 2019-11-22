@@ -20,7 +20,6 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeCreateRubik
                                                                                          jint rotationDegrees,
                                                                                          jint frameWidth,
                                                                                          jint frameHeight,
-                                                                                         jint inputImageFormat,
                                                                                          jint drawMode,
                                                                                          jint strokeWidth,
                                                                                          jboolean fillShape,
@@ -30,12 +29,6 @@ JNIEXPORT void JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeReleaseCubeDetector(JNIEnv *env,
                                                                                          jobject instance,
                                                                                          jlong cubeDetectorHandle);
-
-JNIEXPORT void JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetDebuggable(JNIEnv *env,
-                                                                                   jobject instance,
-                                                                                   jlong cubeDetectorHandle,
-                                                                                   jboolean debuggable);
 
 JNIEXPORT void JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetDrawFoundFacelets(JNIEnv *env,
@@ -54,12 +47,6 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCubeDat
                                                                                         jobject instance,
                                                                                         jlong cubeDetectorHandle,
                                                                                         jobject imageDataDirectBuffer);
-JNIEXPORT void JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeOverrideInputFrameWithResultFrame(
-        JNIEnv *env,
-        jobject instance,
-        jlong cubeDetectorHandle,
-        jbyteArray imageByteData);
 
 JNIEXPORT void JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetImageProperties(JNIEnv *env,
@@ -67,8 +54,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetImagePro
                                                                                         jlong cubeDetectorHandle,
                                                                                         jint rotation,
                                                                                         jint width,
-                                                                                        jint height,
-                                                                                        jint imageFormat);
+                                                                                        jint height);
 
 JNIEXPORT void JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetDrawConfig(JNIEnv *env,
