@@ -59,7 +59,7 @@ public:
      * @param [in/out] imageData.
      * @return nullptr if nothing is detected in the current frame, or RESULT_TYPE if something is found.
      */
-    virtual RESULT_TYPE process(INPUT_TYPE inputFrame)=0;
+    virtual bool process(INPUT_TYPE inputFrame)=0;
 
     /**
      * Notifies the Processor that the frame size, format or other image property of the either the input or output frame has changed.
@@ -119,7 +119,7 @@ public:
      *
      * @return int expected output frame size, in bytes.
      */
-    virtual int getFrameRGBAByteCount()=0;
+    virtual int getFaceletsByteCount()=0;
 
 };
 } //end namespace rbdt

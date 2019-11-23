@@ -25,7 +25,7 @@ namespace rbdt {
         LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - destructor.");
     }
 
-    std::vector<std::vector<RubikFacelet>> RubikProcessor::process(const uint8_t *imageData) {
+    bool RubikProcessor::process(const uint8_t *imageData) {
         return behavior->process(imageData);
     }
 
@@ -41,8 +41,8 @@ namespace rbdt {
         return behavior->getFrameRGBABufferOffset();
     }
 
-    int RubikProcessor::getFrameRGBAByteCount() {
-        return behavior->getFrameRGBAByteCount();
+    int RubikProcessor::getFaceletsByteCount() {
+        return behavior->getFaceletsByteCount();
     }
 
     int RubikProcessor::getFrameYUVByteCount() {

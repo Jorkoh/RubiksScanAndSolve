@@ -29,8 +29,10 @@ class CubeDetectorAnalyzer(listener: DetectorListener? = null) : ImageAnalysis.A
         .imageSavePath("${Environment.getExternalStorageDirectory()}/Rubik/")
         // builds the RubikDetector for the given params.
         .build()
-    // allocate a ByteBuffer of the capacity required by the RubikDetector
+
     private val imageDataBuffer = ByteBuffer.allocateDirect(rubikDetector.requiredMemory)
+
+    private val faceletsBuffer = ByteBuffer.allocate(rubikDetector.resultByteCount * 2)
 
     override fun analyze(image: ImageProxy, rotationDegrees: Int) {
         // If there are no listeners attached, we don't need to perform analysis
@@ -41,9 +43,7 @@ class CubeDetectorAnalyzer(listener: DetectorListener? = null) : ImageAnalysis.A
 //        if (currentTimestamp - lastAnalyzedTimestamp >= 200) {
 //            lastAnalyzedTimestamp = currentTimestamp
 
-//        if (detectFrame) {
-//            detectFrame = false
-
+        if (detectFrame) {
             Log.d("RESULTS", "Analyzer image rotation degrees: $rotationDegrees")
             Log.d("RESULTS", "Analyzer image width: ${image.width}, analyzer image height ${image.height}")
 
@@ -56,11 +56,33 @@ class CubeDetectorAnalyzer(listener: DetectorListener? = null) : ImageAnalysis.A
             val imageHolderArray = imageDataBuffer.array()
 
             // call findCube passing the backing array of the ByteBuffer as a parameter to the RubikDetector
-            val facelets = rubikDetector.findCube(imageHolderArray)
+//        val found = rubikDetector.findCube(imageHolderArray)
+            val found = rubikDetector.findCube(imageDataBuffer)
+
+
+            if (found) {
+                when {
+                    faceletsBuffer.position() == 0 -> {
+                        faceletsBuffer.put(
+                            imageHolderArray,
+                            rubikDetector.resultBufferOffset,
+                            rubikDetector.resultByteCount
+                        )
+                    }
+                    faceletsBuffer.position() != 0 -> {
+                        faceletsBuffer.put(
+                            imageHolderArray,
+                            rubikDetector.resultBufferOffset + rubikDetector.resultByteCount,
+                            rubikDetector.resultByteCount
+                        )
+                    }
+                    else -> detectFrame = false
+                }
+            }
 
             listeners.forEach { listener ->
-                listener(facelets != null)
+                listener(found)
             }
-//        }
+        }
     }
 }

@@ -2,7 +2,6 @@ package com.jorkoh.rubiksscanandsolve.rubikdetector;
 
 import android.util.Log;
 
-import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -10,8 +9,6 @@ import com.jorkoh.rubiksscanandsolve.rubikdetector.config.DrawConfig;
 import com.jorkoh.rubiksscanandsolve.rubikdetector.model.Point2d;
 import com.jorkoh.rubiksscanandsolve.rubikdetector.model.RubikFacelet;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.nio.ByteBuffer;
 
 /**
@@ -53,8 +50,8 @@ import java.nio.ByteBuffer;
  * <i>image data array</i> having a capacity smaller than the value returned by {@link #getRequiredMemory()}.
  * <p>
  * To know where to store the input frame in the image data array, use {@link #getInputFrameBufferOffset()} and {@link #getInputFrameByteCount()}. To know
- * from where to read the output frame, from the image data array, after the call to {@code findCube(...)}, use {@link #getResultFrameBufferOffset()} and
- * {@link #getResultFrameByteCount()}.
+ * from where to read the output frame, from the image data array, after the call to {@code findCube(...)}, use {@link #getResultBufferOffset()} and
+ * {@link #getResultByteCount()}.
  * <p>
  * A highly simplified {@code findCube(...)} usage might look similar to the example, using the {@link android.hardware.Camera} api.
  * <p>
@@ -165,13 +162,13 @@ public class RubikDetector {
     /**
      * The expected size of the output frame, in bytes.
      *
-     * @see #getResultFrameByteCount()
+     * @see #getResultByteCount()
      */
     private int resultFrameByteCount;
     /**
      * The offset at which the output frame is expected to be in the buffer sent to {@link #findCube(byte[])} or {@link #findCube(ByteBuffer)}.
      *
-     * @see #getResultFrameBufferOffset()
+     * @see #getResultBufferOffset()
      */
     private int resultFrameBufferOffset;
 
@@ -219,8 +216,8 @@ public class RubikDetector {
      * <li>{@link #getRequiredMemory()}</li>
      * <li>{@link #getInputFrameByteCount()}</li>
      * <li>{@link #getInputFrameBufferOffset()}</li>
-     * <li>{@link #getResultFrameByteCount()}</li>
-     * <li>{@link #getResultFrameBufferOffset()}</li>
+     * <li>{@link #getResultByteCount()}</li>
+     * <li>{@link #getResultBufferOffset()}</li>
      * </ul>
      * <p>
      * Following this call, make sure {@link #findCube(byte[])}(or {@link #findCube(ByteBuffer)} is not called with a buffer allocated for the previously
@@ -239,8 +236,8 @@ public class RubikDetector {
      * <li>{@link #getRequiredMemory()}</li>
      * <li>{@link #getInputFrameByteCount()}</li>
      * <li>{@link #getInputFrameBufferOffset()}</li>
-     * <li>{@link #getResultFrameByteCount()}</li>
-     * <li>{@link #getResultFrameBufferOffset()}</li>
+     * <li>{@link #getResultByteCount()}</li>
+     * <li>{@link #getResultBufferOffset()}</li>
      * </ul>
      * <p>
      * Following this call, make sure {@link #findCube(byte[])}(or {@link #findCube(ByteBuffer)} is not called with a buffer allocated for the previously
@@ -284,8 +281,8 @@ public class RubikDetector {
      * Additionally, if a draw mode other than {@link DrawConfig.DrawMode#DO_NOT_DRAW} is active, and facelets are found, the output frame
      * will also contain the drawn facelets.
      * <p>
-     * The output frame will be written at offset {@link #getResultFrameBufferOffset()} in the byte array parameter. It will have a length equal to
-     * {@link #getResultFrameByteCount()}.
+     * The output frame will be written at offset {@link #getResultBufferOffset()} in the byte array parameter. It will have a length equal to
+     * {@link #getResultByteCount()}.
      * <p>
      * For example, one could read the output frame in the following way:
      * <pre>{@code
@@ -310,12 +307,11 @@ public class RubikDetector {
      * or {@code null} if a cube is not detected.
      */
     @Nullable
-    public RubikFacelet[][] findCube(@NonNull byte[] imageData) {
+    public boolean findCube(@NonNull byte[] imageData) {
         if (isActive() && imageData.length >= requiredMemory) {
-            int[] nativeResult = nativeFindCube(nativeProcessorRef, imageData);
-            return decodeResult(nativeResult);
+            return nativeFindCube(nativeProcessorRef, imageData);
         }
-        return null;
+        return false;
     }
 
     /**
@@ -331,8 +327,8 @@ public class RubikDetector {
      * Additionally, if a draw mode other than {@link DrawConfig.DrawMode#DO_NOT_DRAW} is active, and facelets are found, the output frame
      * will also contain the drawn facelets.
      * <p>
-     * The output frame will be written at offset {@link #getResultFrameBufferOffset()} in the buffer parameter's backing array. It will have a length equal
-     * to {@link #getResultFrameByteCount()}.
+     * The output frame will be written at offset {@link #getResultBufferOffset()} in the buffer parameter's backing array. It will have a length equal
+     * to {@link #getResultByteCount()}.
      * <p>
      * For example, one could read the output frame in the following way:
      * <pre>{@code
@@ -357,15 +353,14 @@ public class RubikDetector {
      * or {@code null} if a cube is not detected.
      */
     @Nullable
-    public RubikFacelet[][] findCube(@NonNull ByteBuffer imageDataBuffer) {
+    public boolean findCube(@NonNull ByteBuffer imageDataBuffer) {
         if (!imageDataBuffer.isDirect()) {
             throw new IllegalArgumentException("The image data buffer needs to be a direct buffer.");
         }
         if (isActive() && imageDataBuffer.capacity() >= requiredMemory) {
-            int[] nativeResult = nativeFindCubeDataBuffer(nativeProcessorRef, imageDataBuffer);
-            return decodeResult(nativeResult);
+            return nativeFindCubeDataBuffer(nativeProcessorRef, imageDataBuffer);
         }
-        return null;
+        return false;
     }
 
     /**
@@ -439,7 +434,7 @@ public class RubikDetector {
      * @see RubikDetector#findCube(byte[])
      * @see RubikDetector#updateImageProperties(ImageProperties)
      */
-    public int getResultFrameBufferOffset() {
+    public int getResultBufferOffset() {
         return resultFrameBufferOffset;
     }
 
@@ -453,7 +448,7 @@ public class RubikDetector {
      * @see RubikDetector#findCube(byte[])
      * @see RubikDetector#updateImageProperties(ImageProperties)
      */
-    public int getResultFrameByteCount() {
+    public int getResultByteCount() {
         return resultFrameByteCount;
     }
 
@@ -607,7 +602,7 @@ public class RubikDetector {
      * @param imageData          byte[] which contains the input frame data, and has a length equal to the value returned by {@link #getRequiredMemory()}.
      * @return an int[] of marshaled data, representing the found facelets, or {@code null} if nothing is found.
      */
-    private native int[] nativeFindCube(long nativeProcessorRef, byte[] imageData);
+    private native boolean nativeFindCube(long nativeProcessorRef, byte[] imageData);
 
     /**
      * Searches for Rubik's Cube facelets in the frame stored in the {@link ByteBuffer} parameter.
@@ -620,7 +615,7 @@ public class RubikDetector {
      *                           to the value returned by {@link #getRequiredMemory()}.
      * @return an int[] of marshaled data, representing the found facelets, or {@code null} if nothing is found.
      */
-    private native int[] nativeFindCubeDataBuffer(long nativeProcessorRef, ByteBuffer imageDataBuffer);
+    private native boolean nativeFindCubeDataBuffer(long nativeProcessorRef, ByteBuffer imageDataBuffer);
 
     /**
      * Frees the native memory associated with the native RubikProcessor instance identified by the {@code nativeProcessorRef}.

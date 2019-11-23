@@ -83,6 +83,24 @@ namespace rbdt {
             if (faceFound) {
                 fillMissingFacelets(estimatedFacelets, facetModel);
                 facelets = createResult(facetModel);
+
+                // This check used to be done on the color detection part for some reason..
+                for (int j = 0; j < 3; j++) {
+                    for (int k = 0; k < 3; k++) {
+                        RubikFacelet facelet = facelets[j][k];
+                        float innerCircleRadius = facelet.innerCircleRadius();
+                        if ((facelet.center.x - innerCircleRadius) < 0 ||
+                            (facelet.center.x + innerCircleRadius) > frameGray.cols ||
+                            (facelet.center.y - innerCircleRadius) < 0 ||
+                            (facelet.center.y + innerCircleRadius) > frameGray.rows ||
+                            innerCircleRadius < 0) {
+                            LOG_DEBUG("NativeRubikProcessor", "frameNumber: %d FOUND INVALID RECT AFTER FINDING FACE", frameNumber);
+                            facelets.clear();
+                            faceFound = false;
+                            break;
+                        }
+                    }
+                }
             }
         }
 

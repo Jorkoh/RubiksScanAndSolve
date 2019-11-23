@@ -69,7 +69,7 @@ namespace rbdt {
         /**
          * @copydoc RubikProcessor::process()
          */
-        std::vector<std::vector<RubikFacelet>> process(const uint8_t *imageData) override;
+        bool process(const uint8_t *imageData) override;
 
         void updateImageProperties(const ImageProperties &imageProperties) override;
 
@@ -77,7 +77,7 @@ namespace rbdt {
 
         int getFrameRGBABufferOffset() override;
 
-        int getFrameRGBAByteCount() override;
+        int getFaceletsByteCount() override;
 
         int getFrameYUVByteCount() override;
 
@@ -106,7 +106,7 @@ namespace rbdt {
                            std::unique_ptr<FaceletsDrawController> faceletsDrawController,
                            std::shared_ptr<ImageSaver> imageSaver);
 
-        std::vector<std::vector<RubikFacelet>> findCubeInternal(const uint8_t *data);
+        bool findCubeInternal(const uint8_t *data);
 
         /**
          * Extracts the color of each RubikFacelet in the array, then updates its color to match its detected color.
@@ -123,10 +123,17 @@ namespace rbdt {
 
         void rotateMat(cv::Mat &matImage, int rotFlag);
 
+        void cropResizeAndRotate(cv::Mat &matImage);
+
         void extractFaces(cv::Mat &matImage, cv::Mat &topFace, cv::Mat &leftFace, cv::Mat &rightFace);
 
         void applyPerspectiveTransform(const cv::Mat &inputFrame, cv::Mat &outputFrame, const std::vector<cv::Point2f> &inputPoints,
                                        const cv::Size &outputSize);
+
+        void saveFacelets(std::vector<std::vector<RubikFacelet>> &topFacelets, cv::Mat &topFaceHSV,
+                          std::vector<std::vector<RubikFacelet>> &leftFacelets, cv::Mat &leftFaceHSV,
+                          std::vector<std::vector<RubikFacelet>> &rightFacelets, cv::Mat &rightFaceHSV,
+                          const uint8_t * data);
 
         /**
          * Applies the colors in the color array, to the facelets in the facelets array.
@@ -156,16 +163,12 @@ namespace rbdt {
          */
         void applyImageProperties(const ImageProperties &properties);
 
-        /**
-        * Just a value representing that there is no need to perform any conversion on the current frame.
-        *
-        * The exact value of the int is not important. It just needs to differ from any of the codes used by cv::cvtColor(...)
-        */
-        static constexpr int NO_CONVERSION_NEEDED = 2504;
 
         static constexpr int DEFAULT_DIMENSION = 480;
 
         static constexpr int DEFAULT_FACE_DIMENSION = 360;
+
+        static constexpr int DEFAULT_FACELET_DIMENSION = 40;
 
         static constexpr int NO_OFFSET = 0;
 
@@ -225,12 +228,12 @@ namespace rbdt {
         /**
          * @see RubikProcessor::getOutputFrameBufferOffset()
          */
-        int frameRGBAOffset;
+        int frameGrayOffset;
 
         /**
          * @see RubikProcessor::getOutputFrameByteCount()
          */
-        int frameRGBAByteCount;
+        int frameGrayByteCount;
 
         /**
          * @see RubikProcessor::getInputFrameBufferOffset()
@@ -264,24 +267,22 @@ namespace rbdt {
         bool needsResize;
 
         /**
-         * the offset in the input array where the processing frame (RGBA) will be saved while processing
-         */
-        int firstFaceRGBAOffset;
-
-        /**
-         * the size in bytes of the RGBA processing frame
-         */
-        int faceRGBAByteCount;
-
-        /**
          * the offset in the input array where the processing frame (GRAYSCALE) will be saved while processing
          */
         int firstFaceGrayOffset;
+
+        int firstFaceHSVOffset;
+
+        int firstFaceletHSVOffset;
 
         /**
          * the size in bytes of the GRAYSCALE processing frame
          */
         int faceGrayByteCount;
+
+        int faceletHSVByteCount;
+
+        int faceHSVByteCount;
     };
 
 } //namespace rbdt

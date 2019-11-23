@@ -46,7 +46,7 @@ class ScanFragment : Fragment() {
         } ?: Unit
     }
 
-    private val detectorListener: DetectorListener = { detected  ->
+    private val detectorListener: DetectorListener = { detected ->
         view_finder_overlay.post {
             view_finder_overlay.background.setColorFilter(
                 if (detected) {
@@ -71,6 +71,7 @@ class ScanFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_scan, container, false).apply {
             button_scan.setOnClickListener {
                 //TODO temporary stuff
+                view_finder_overlay.background.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP)
                 (imageAnalyzer?.analyzer as CubeDetectorAnalyzer).detectFrame = true
             }
             button_photo.setOnClickListener {

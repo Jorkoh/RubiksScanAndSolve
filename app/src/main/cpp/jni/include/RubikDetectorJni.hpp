@@ -36,13 +36,13 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetDrawFoun
                                                                                           jlong cubeDetectorHandle,
                                                                                           jboolean shouldDrawFoundFacelets);
 
-JNIEXPORT jintArray JNICALL
+JNIEXPORT jboolean JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCube(JNIEnv *env,
                                                                               jobject instance,
                                                                               jlong cubeDetectorHandle,
                                                                               jbyteArray imageByteData);
 
-JNIEXPORT jintArray JNICALL
+JNIEXPORT jboolean JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCubeDataBuffer(JNIEnv *env,
                                                                                         jobject instance,
                                                                                         jlong cubeDetectorHandle,

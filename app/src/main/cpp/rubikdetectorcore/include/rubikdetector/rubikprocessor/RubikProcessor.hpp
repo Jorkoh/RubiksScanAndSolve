@@ -91,7 +91,7 @@ public:
      *
      * @see ImageProcessor::process()
      */
-    std::vector<std::vector<RubikFacelet>> process(const uint8_t *imageData) override;
+    bool process(const uint8_t *imageData) override;
 
     void updateImageProperties(const ImageProperties &imageProperties) override;
 
@@ -99,7 +99,7 @@ public:
 
     int getFrameRGBABufferOffset() override;
 
-    int getFrameRGBAByteCount() override;
+    int getFaceletsByteCount() override;
 
     int getFrameYUVByteCount() override;
 

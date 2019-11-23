@@ -60,7 +60,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeReleaseCube
     delete &cubeDetector;
 }
 
-JNIEXPORT jintArray  JNICALL
+JNIEXPORT jboolean JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCube(JNIEnv *env,
                                                                               jobject instance,
                                                                               jlong cubeDetectorHandle,
@@ -72,16 +72,14 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCube(JN
     if (ptr) {
         uint8_t *ptrAsInt = reinterpret_cast<uint8_t *>(ptr);
         env->ReleasePrimitiveArrayCritical(imageByteData, ptr, JNI_ABORT);
-        std::vector<std::vector<rbdt::RubikFacelet>> result = cubeDetector.process(ptrAsInt);
-        return processResult(result, env);
+        return static_cast<jboolean>(cubeDetector.process(ptrAsInt));
     } else {
-        LOG_WARN("RUBIK_JNI_PART.cpp",
-                 "Could not obtain image byte array. No processing performed.");
-        return NULL;
+        LOG_WARN("RUBIK_JNI_PART.cpp","Could not obtain image byte array. No processing performed.");
+        return static_cast<jboolean>(false);
     }
 }
 
-JNIEXPORT jintArray JNICALL
+JNIEXPORT jboolean JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCubeDataBuffer(JNIEnv *env,
                                                                                         jobject instance,
                                                                                         jlong cubeDetectorHandle,
@@ -91,12 +89,11 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCubeDat
     void *ptr = env->GetDirectBufferAddress(imageDataDirectBuffer);
     if (ptr) {
         uint8_t *ptrAsInt = reinterpret_cast<uint8_t *>(ptr);
-        std::vector<std::vector<rbdt::RubikFacelet>> result = cubeDetector.process(ptrAsInt);
-        return processResult(result, env);
+        return static_cast<jboolean>(cubeDetector.process(ptrAsInt));
     } else {
         LOG_WARN("RUBIK_JNI_PART.cpp",
                  "Could not obtain image byte array. No processing performed.");
-        return NULL;
+        return static_cast<jboolean>(false);
     }
 }
 
@@ -145,7 +142,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetResultIm
                                                                                         jobject instance,
                                                                                         jlong cubeDetectorHandle) {
     rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
-    return cubeDetector.getFrameRGBAByteCount();
+    return cubeDetector.getFaceletsByteCount();
 }
 
 JNIEXPORT jint JNICALL
