@@ -1,4 +1,4 @@
-package com.jorkoh.rubiksscanandsolve.utils
+package com.jorkoh.rubiksscanandsolve.Scan.utils
 
 import android.graphics.Matrix
 import android.util.Log
@@ -36,7 +36,8 @@ class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinde
 
         // Initialize the display and rotation from texture view information
         viewFinderDisplay = viewFinder.display.displayId
-        viewFinderRotation = getDisplaySurfaceRotation(viewFinder.display) ?: 0
+        viewFinderRotation = getDisplaySurfaceRotation(viewFinder.display)
+            ?: 0
 
         // Initialize public use-case with the given config
         useCase = Preview(config)
@@ -55,7 +56,8 @@ class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinde
 
             // Apply relevant transformations
             bufferRotation = it.rotationDegrees
-            val rotation = getDisplaySurfaceRotation(viewFinder.display)
+            val rotation =
+                getDisplaySurfaceRotation(viewFinder.display)
             updateTransform(viewFinder, rotation, it.textureSize, viewFinderDimens)
         }
 
@@ -63,7 +65,8 @@ class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinde
         viewFinder.addOnLayoutChangeListener { view, left, top, right, bottom, _, _, _, _ ->
             val viewFinder = view as TextureView
             val newViewFinderDimens = Size(right - left, bottom - top)
-            val rotation = getDisplaySurfaceRotation(viewFinder.display)
+            val rotation =
+                getDisplaySurfaceRotation(viewFinder.display)
             updateTransform(viewFinder, rotation, bufferDimens, newViewFinderDimens)
         }
     }

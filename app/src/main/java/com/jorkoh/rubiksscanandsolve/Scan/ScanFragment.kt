@@ -1,14 +1,12 @@
-package com.jorkoh.rubiksscanandsolve
+package com.jorkoh.rubiksscanandsolve.Scan
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
-import android.graphics.ImageFormat
 import android.graphics.PorterDuff
 import android.hardware.display.DisplayManager
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,7 +14,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.*
 import androidx.fragment.app.Fragment
-import com.jorkoh.rubiksscanandsolve.utils.AutoFitPreviewBuilder
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
+import com.jorkoh.rubiksscanandsolve.R
+import com.jorkoh.rubiksscanandsolve.Scan.ScanViewModel.ScanStages.*
+import com.jorkoh.rubiksscanandsolve.Scan.utils.AutoFitPreviewBuilder
 import kotlinx.android.synthetic.main.fragment_scan.*
 import kotlinx.android.synthetic.main.fragment_scan.view.*
 import permissions.dispatcher.*
@@ -25,6 +27,8 @@ import java.util.concurrent.Executors
 
 @RuntimePermissions
 class ScanFragment : Fragment() {
+
+    private lateinit var scanVM : ScanViewModel
 
     private val executor = Executors.newCachedThreadPool()
 
@@ -46,19 +50,6 @@ class ScanFragment : Fragment() {
         } ?: Unit
     }
 
-    private val detectorListener: DetectorListener = { detected ->
-        view_finder_overlay.post {
-            view_finder_overlay.background.setColorFilter(
-                if (detected) {
-                    Color.GREEN
-                } else {
-                    Color.RED
-                },
-                PorterDuff.Mode.SRC_ATOP
-            )
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         retainInstance = true
@@ -70,18 +61,7 @@ class ScanFragment : Fragment() {
     ): View? {
         return inflater.inflate(R.layout.fragment_scan, container, false).apply {
             button_scan.setOnClickListener {
-                //TODO temporary stuff
-                view_finder_overlay.background.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP)
-                (imageAnalyzer?.analyzer as CubeDetectorAnalyzer).detectFrame = true
-            }
-            button_photo.setOnClickListener {
-                imageCapture?.takePicture(executor, object : ImageCapture.OnImageCapturedListener() {
-                    override fun onCaptureSuccess(image: ImageProxy?, rotationDegrees: Int) {
-                        // It does return YUV! Won't be used tho..
-                        Log.d("TEST", "Image format: ${image?.format}")
-                        super.onCaptureSuccess(image, rotationDegrees)
-                    }
-                })
+                scanVM.startScanning()
             }
         }
     }
@@ -98,6 +78,30 @@ class ScanFragment : Fragment() {
             updateCameraUI()
             enableScannerWithPermissionCheck()
         }
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        scanVM = ViewModelProviders.of(this)[ScanViewModel::class.java]
+        scanVM.scanStage.observe(viewLifecycleOwner, Observer { stage ->
+            when(stage){
+                PRE_FIRST_SCAN, PRE_SECOND_SCAN -> {
+                    view_finder_overlay.background.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_ATOP)
+                    button_scan.isEnabled = true
+                }
+                FIRST_SCAN, SECOND_SCAN -> {
+                    view_finder_overlay.background.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP)
+                    button_scan.isEnabled = false
+                }
+                DONE -> {
+                    view_finder_overlay.background.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_ATOP)
+                    button_scan.isEnabled = false
+                }
+                else ->{
+                    // Do nothing
+                }
+            }
+        })
     }
 
     private fun updateCameraUI() {
@@ -122,23 +126,13 @@ class ScanFragment : Fragment() {
             setTargetRotation(view_finder.display.rotation)
             setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
         }.build()
-
         imageAnalyzer = ImageAnalysis(analyzerConfig).apply {
-            setAnalyzer(executor, CubeDetectorAnalyzer(detectorListener))
+            setAnalyzer(executor, ImageAnalysis.Analyzer { image, rotation ->
+                scanVM.processFrame(image, rotation)
+            })
         }
 
-        // Set up the capture use case to allow users to take photos
-        val imageCaptureConfig = ImageCaptureConfig.Builder().apply {
-            setLensFacing(CameraX.LensFacing.BACK)
-            setBufferFormat(ImageFormat.YUV_420_888)
-            setCaptureMode(ImageCapture.CaptureMode.MAX_QUALITY)
-            setTargetAspectRatio(AspectRatio.RATIO_4_3)
-            setTargetRotation(view_finder.display.rotation)
-        }.build()
-
-        imageCapture = ImageCapture(imageCaptureConfig)
-
-        CameraX.bindToLifecycle(viewLifecycleOwner, preview, imageAnalyzer, imageCapture)
+        CameraX.bindToLifecycle(viewLifecycleOwner, preview, imageAnalyzer)
     }
 
     override fun onDestroyView() {
@@ -146,6 +140,8 @@ class ScanFragment : Fragment() {
 
         displayManager.unregisterDisplayListener(displayListener)
     }
+
+    // Permissions stuff down here
 
     @OnShowRationale(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
     fun showRationaleForCamera(request: PermissionRequest) {

@@ -141,6 +141,8 @@ public class RubikDetector {
      * The height of the input & output frame
      */
     private int frameHeight;
+
+    private int frameRotation;
     /**
      * The required memory in bytes, required by the native implementation, for the processing to occur.
      *
@@ -206,6 +208,7 @@ public class RubikDetector {
         this.nativeProcessorRef = createNativeDetector(properties, drawConfig, storagePath);
         this.frameWidth = properties.width;
         this.frameHeight = properties.height;
+        this.frameRotation = properties.rotationDegrees;
         syncWithNativeObject();
     }
 
@@ -470,6 +473,10 @@ public class RubikDetector {
         return frameHeight;
     }
 
+    public int getFrameRotation() {
+        return frameRotation;
+    }
+
     /**
      * Updates the {@link DrawConfig} of the current detector.
      *
@@ -518,6 +525,7 @@ public class RubikDetector {
             nativeSetImageProperties(nativeProcessorRef, rotation, width, height);
             this.frameWidth = width;
             this.frameHeight = height;
+            this.frameRotation = rotation;
             syncWithNativeObject();
         }
     }
@@ -749,7 +757,7 @@ public class RubikDetector {
         private String imageSavePath = null;
         private int inputFrameWidth = 640;
         private int inputFrameHeight = 480;
-        private int rotationDegrees = 0;
+        private int rotationDegrees = 90;
 
         // #Added
 

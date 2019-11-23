@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ScanFragment">
+    tools:context=".Scan.ScanFragment">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/card_preview"
@@ -35,28 +35,13 @@
         android:id="@+id/button_scan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
         android:text="Scan"
+        android:enabled="false"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/card_preview" />
 
-    <Button
-        android:id="@+id/button_photo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Photo"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button_scan" />
-
-    <androidx.appcompat.widget.AppCompatImageView
-        android:id="@+id/result_image"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toStartOf="@id/guideline_end_preview"
-        app:layout_constraintStart_toEndOf="@id/guideline_start_preview"
-        app:layout_constraintTop_toBottomOf="@+id/button_photo" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_top_preview"

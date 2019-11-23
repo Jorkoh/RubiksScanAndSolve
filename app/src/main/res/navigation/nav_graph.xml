@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/scanFragment"
-        android:name="com.jorkoh.rubiksscanandsolve.ScanFragment"
+        android:name="com.jorkoh.rubiksscanandsolve.Scan.ScanFragment"
         android:label="fragment_scan"
         tools:layout="@layout/fragment_scan" />
 </navigation>
