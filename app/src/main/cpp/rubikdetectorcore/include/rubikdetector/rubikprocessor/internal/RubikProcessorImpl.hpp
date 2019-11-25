@@ -71,6 +71,10 @@ namespace rbdt {
          */
         bool process(const uint8_t *imageData) override;
 
+        std::string processColors(const uint8_t *imageData) override;
+
+        void updateScanPhase(const bool &isSecondPhase) override;
+
         void updateImageProperties(const ImageProperties &imageProperties) override;
 
         int getRequiredMemory() override;
@@ -107,6 +111,8 @@ namespace rbdt {
                            std::shared_ptr<ImageSaver> imageSaver);
 
         bool findCubeInternal(const uint8_t *data);
+
+        std::string analyzeColorsInternal(const uint8_t *data);
 
         /**
          * Extracts the color of each RubikFacelet in the array, then updates its color to match its detected color.
@@ -155,6 +161,8 @@ namespace rbdt {
          */
         void upscaleResult(std::vector<std::vector<RubikFacelet>> &facelets);
 
+        void applyScanPhase(const bool &isSecondPhase);
+
         /**
          * Applies updated ImageProperties to this processor. This promts the RubikProcessor to recompute its memory requirements,
          * scaling factors, processing size, and others.
@@ -201,6 +209,8 @@ namespace rbdt {
          * used to compute the processing frame rate
          */
         int frameRateSum = 0;
+
+        bool isSecondPhase = false;
 
         int originalWidth;
 
@@ -271,8 +281,6 @@ namespace rbdt {
          */
         int firstFaceGrayOffset;
 
-        int firstFaceHSVOffset;
-
         int firstFaceletHSVOffset;
 
         /**
@@ -282,7 +290,6 @@ namespace rbdt {
 
         int faceletHSVByteCount;
 
-        int faceHSVByteCount;
     };
 
 } //namespace rbdt

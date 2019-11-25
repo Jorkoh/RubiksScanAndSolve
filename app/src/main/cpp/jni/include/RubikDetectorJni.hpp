@@ -48,6 +48,18 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCubeDat
                                                                                         jlong cubeDetectorHandle,
                                                                                         jobject imageDataDirectBuffer);
 
+JNIEXPORT jstring JNICALL
+Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeAnalyzeColorsDataBuffer(JNIEnv *env,
+                                                                                        jobject instance,
+                                                                                        jlong cubeDetectorHandle,
+                                                                                        jobject imageDataDirectBuffer);
+
+JNIEXPORT void JNICALL
+Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetScanPhase(JNIEnv *env,
+                                                                                        jobject instance,
+                                                                                        jlong cubeDetectorHandle,
+                                                                                        jboolean isSecondPhase);
+
 JNIEXPORT void JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetImageProperties(JNIEnv *env,
                                                                                         jobject instance,

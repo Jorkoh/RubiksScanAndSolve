@@ -93,6 +93,10 @@ public:
      */
     bool process(const uint8_t *imageData) override;
 
+    std::string processColors(const uint8_t *imageData) override;
+
+    void updateScanPhase(const bool &isSecondPhase) override;
+
     void updateImageProperties(const ImageProperties &imageProperties) override;
 
     int getRequiredMemory() override;

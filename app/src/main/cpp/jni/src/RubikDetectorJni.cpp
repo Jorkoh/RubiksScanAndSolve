@@ -97,6 +97,33 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCubeDat
     }
 }
 
+JNIEXPORT jstring JNICALL
+Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeAnalyzeColorsDataBuffer(JNIEnv *env,
+                                                                                        jobject instance,
+                                                                                        jlong cubeDetectorHandle,
+                                                                                        jobject imageDataDirectBuffer) {
+    rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
+
+    void *ptr = env->GetDirectBufferAddress(imageDataDirectBuffer);
+    if (ptr) {
+        uint8_t *ptrAsInt = reinterpret_cast<uint8_t *>(ptr);
+        return (env)->NewStringUTF(cubeDetector.processColors(ptrAsInt).c_str());
+    } else {
+        LOG_WARN("RUBIK_JNI_PART.cpp",
+                 "Could not obtain image byte array. No color processing performed.");
+        return (env)->NewStringUTF("");
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetScanPhase(JNIEnv *env,
+                                                                                        jobject instance,
+                                                                                        jlong cubeDetectorHandle,
+                                                                                        jboolean isSecondPhase) {
+    rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
+    cubeDetector.updateScanPhase((bool) isSecondPhase);
+}
+
 JNIEXPORT void JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetImageProperties(JNIEnv *env,
                                                                                         jobject instance,

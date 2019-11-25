@@ -1,4 +1,4 @@
-package com.jorkoh.rubiksscanandsolve.Scan.utils
+package com.jorkoh.rubiksscanandsolve.scan.utils
 
 import android.graphics.Matrix
 import android.util.Log
@@ -11,10 +11,6 @@ import androidx.camera.core.Preview
 import androidx.camera.core.PreviewConfig
 import java.lang.IllegalArgumentException
 import java.lang.ref.WeakReference
-import android.opengl.ETC1.getHeight
-import android.opengl.ETC1.getWidth
-
-
 
 
 class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinderRef: WeakReference<TextureView>) {
@@ -36,7 +32,9 @@ class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinde
 
         // Initialize the display and rotation from texture view information
         viewFinderDisplay = viewFinder.display.displayId
-        viewFinderRotation = getDisplaySurfaceRotation(viewFinder.display)
+        viewFinderRotation = getDisplaySurfaceRotation(
+            viewFinder.display
+        )
             ?: 0
 
         // Initialize public use-case with the given config
@@ -57,7 +55,9 @@ class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinde
             // Apply relevant transformations
             bufferRotation = it.rotationDegrees
             val rotation =
-                getDisplaySurfaceRotation(viewFinder.display)
+                getDisplaySurfaceRotation(
+                    viewFinder.display
+                )
             updateTransform(viewFinder, rotation, it.textureSize, viewFinderDimens)
         }
 
@@ -66,7 +66,9 @@ class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinde
             val viewFinder = view as TextureView
             val newViewFinderDimens = Size(right - left, bottom - top)
             val rotation =
-                getDisplaySurfaceRotation(viewFinder.display)
+                getDisplaySurfaceRotation(
+                    viewFinder.display
+                )
             updateTransform(viewFinder, rotation, bufferDimens, newViewFinderDimens)
         }
     }

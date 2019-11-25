@@ -142,6 +142,8 @@ public class RubikDetector {
      */
     private int frameHeight;
 
+    private boolean isSecondPhase;
+
     private int frameRotation;
     /**
      * The required memory in bytes, required by the native implementation, for the processing to occur.
@@ -149,6 +151,8 @@ public class RubikDetector {
      * @see #getRequiredMemory()
      */
     private int requiredMemory;
+
+    private int requiredMemoryColors;
     /**
      * The expected size of the input frame, in bytes.
      *
@@ -209,6 +213,7 @@ public class RubikDetector {
         this.frameWidth = properties.width;
         this.frameHeight = properties.height;
         this.frameRotation = properties.rotationDegrees;
+        this.isSecondPhase = false;
         syncWithNativeObject();
     }
 
@@ -246,12 +251,16 @@ public class RubikDetector {
      * Following this call, make sure {@link #findCube(byte[])}(or {@link #findCube(ByteBuffer)} is not called with a buffer allocated for the previously
      * set properties.
      *
-     * @param rotation    rotation of the new input frame, in degrees
-     * @param width       width of the new input & output frames, in pixels
-     * @param height      height of the new input & output frames, in pixels
+     * @param rotation rotation of the new input frame, in degrees
+     * @param width    width of the new input & output frames, in pixels
+     * @param height   height of the new input & output frames, in pixels
      */
     public void updateImageProperties(int rotation, int width, int height) {
         applyImageProperties(rotation, width, height);
+    }
+
+    public void updateScanPhase(boolean isSecondPhase){
+        applyScanPhase(isSecondPhase);
     }
 
     /**
@@ -366,6 +375,16 @@ public class RubikDetector {
         return false;
     }
 
+    public String analyzeColors(@NonNull ByteBuffer imageDataBuffer) {
+        if (!imageDataBuffer.isDirect()) {
+            throw new IllegalArgumentException("The image data buffer needs to be a direct buffer.");
+        }
+        if (isActive() && imageDataBuffer.capacity() >= requiredMemoryColors) {
+            return nativeAnalyzeColorsDataBuffer(nativeProcessorRef, imageDataBuffer);
+        }
+        return "";
+    }
+
     /**
      * Checks whether the detector is capable of reacting to requests and searching for facelets.
      * <p>
@@ -395,6 +414,10 @@ public class RubikDetector {
      */
     public int getRequiredMemory() {
         return requiredMemory;
+    }
+
+    public int getRequiredMemoryColors() {
+        return requiredMemoryColors;
     }
 
     /**
@@ -512,13 +535,20 @@ public class RubikDetector {
                 storagePath);
     }
 
+    private void applyScanPhase(boolean isSecondPhase){
+        if(isActive()){
+            nativeSetScanPhase(nativeProcessorRef, isSecondPhase);
+            this.isSecondPhase = isSecondPhase;
+        }
+    }
+
     /**
      * Applies the new image properties on the native detector, then updates the memory requirements known by this Java object,
      * with the new values of the native object.
      *
-     * @param rotation    new frame rotation, in degrees
-     * @param width       new frame width, in pixels
-     * @param height      new frame height, in pixels
+     * @param rotation new frame rotation, in degrees
+     * @param width    new frame width, in pixels
+     * @param height   new frame height, in pixels
      */
     private void applyImageProperties(int rotation, int width, int height) {
         if (isActive()) {
@@ -538,6 +568,7 @@ public class RubikDetector {
             this.requiredMemory = nativeGetRequiredMemory(nativeProcessorRef);
             this.resultFrameBufferOffset = nativeGetResultImageOffset(nativeProcessorRef);
             this.resultFrameByteCount = nativeGetResultImageSize(nativeProcessorRef);
+            this.requiredMemoryColors = this.resultFrameByteCount * 2;
             this.inputFrameByteCount = nativeGetInputImageSize(nativeProcessorRef);
             this.inputFrameBufferOffset = nativeGetInputImageOffset(nativeProcessorRef);
         }
@@ -584,12 +615,12 @@ public class RubikDetector {
      * This identifier can be used in future native calls to ensure the actions are performed with/on the
      * native object instance created here.
      *
-     * @param frameWidth       the width of the input & output frames, in pixels
-     * @param frameHeight      the height of the input & output frames, in pixels
-     * @param drawMode         {@link DrawConfig.DrawMode} which controls how the facelets are drawn, if found
-     * @param strokeWidth      the stroke width, in pixels, used when drawing the found facelets.
-     * @param fillShape        {@code true} if the facelets need to be drawn as filled shapes, {@code false} otherwise.
-     * @param storagePath      {@link String} representing an absolute path to a writable, persistent storage location.
+     * @param frameWidth  the width of the input & output frames, in pixels
+     * @param frameHeight the height of the input & output frames, in pixels
+     * @param drawMode    {@link DrawConfig.DrawMode} which controls how the facelets are drawn, if found
+     * @param strokeWidth the stroke width, in pixels, used when drawing the found facelets.
+     * @param fillShape   {@code true} if the facelets need to be drawn as filled shapes, {@code false} otherwise.
+     * @param storagePath {@link String} representing an absolute path to a writable, persistent storage location.
      * @return a long which represents an identifier which can be later used to reference the native object created here.
      */
     private native long nativeCreateRubikDetector(int rotationDegrees,
@@ -625,12 +656,16 @@ public class RubikDetector {
      */
     private native boolean nativeFindCubeDataBuffer(long nativeProcessorRef, ByteBuffer imageDataBuffer);
 
+    private native String nativeAnalyzeColorsDataBuffer(long nativeProcessorRef, ByteBuffer imageDataBuffer);
+
     /**
      * Frees the native memory associated with the native RubikProcessor instance identified by the {@code nativeProcessorRef}.
      *
      * @param nativeProcessorRef long identifier which represents a native RubikProcessor.
      */
     private native void nativeReleaseCubeDetector(long nativeProcessorRef);
+
+    private native void nativeSetScanPhase(long nativeProcessorRef, boolean isSecondPhase);
 
     /**
      * Updates the active image properties on the native object. This causes the native object to recompute its memory requirements.
@@ -726,9 +761,9 @@ public class RubikDetector {
         /**
          * Creates a new immutable ImageProperties object with the properties mentioned in the parameters.
          *
-         * @param rotationDegrees  input rotation in degrees
-         * @param width            input & output frame width, in pixels
-         * @param height           input & output frame width, in pixels
+         * @param rotationDegrees input rotation in degrees
+         * @param width           input & output frame width, in pixels
+         * @param height          input & output frame width, in pixels
          */
         public ImageProperties(int rotationDegrees, int width, int height) {
             this.rotationDegrees = rotationDegrees;

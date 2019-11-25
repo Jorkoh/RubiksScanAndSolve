@@ -34,6 +34,14 @@ namespace rbdt {
         return findCubeInternal(imageData);
     }
 
+    std::string RubikProcessorImpl::processColors(const uint8_t *imageData) {
+        return analyzeColorsInternal(imageData);
+    }
+
+    void RubikProcessorImpl::updateScanPhase(const bool &isSecondPhase) {
+        applyScanPhase(isSecondPhase);
+    }
+
     void RubikProcessorImpl::updateImageProperties(const ImageProperties &newProperties) {
         applyImageProperties(newProperties);
     }
@@ -43,7 +51,7 @@ namespace rbdt {
     }
 
     int RubikProcessorImpl::getFrameRGBABufferOffset() {
-        return frameGrayOffset;
+        return firstFaceletHSVOffset;
     }
 
     int RubikProcessorImpl::getFaceletsByteCount() {
@@ -63,6 +71,10 @@ namespace rbdt {
     }
 /**##### END PUBLIC API #####**/
 /**##### PRIVATE MEMBERS FROM HERE #####**/
+
+    void RubikProcessorImpl::applyScanPhase(const bool &isSecondPhase) {
+        this->isSecondPhase = isSecondPhase;
+    }
 
     void RubikProcessorImpl::applyImageProperties(const ImageProperties &properties) {
         originalWidth = properties.width;
@@ -94,20 +106,16 @@ namespace rbdt {
         frameGrayByteCount = originalWidth * originalHeight;
         frameGrayOffset = frameYUVOffset + frameYUVByteCount;
 
-        faceGrayByteCount = DEFAULT_FACE_DIMENSION * 2;
+        faceGrayByteCount = DEFAULT_FACE_DIMENSION * DEFAULT_FACE_DIMENSION;
         firstFaceGrayOffset = frameGrayOffset + frameGrayByteCount;
 
-        faceHSVByteCount = DEFAULT_FACE_DIMENSION * 6;
-        firstFaceHSVOffset = firstFaceGrayOffset + faceGrayByteCount;
-
-        faceletHSVByteCount = DEFAULT_FACELET_DIMENSION * 6;
-        firstFaceletHSVOffset = firstFaceHSVOffset + (3 * faceHSVByteCount);
+        faceletHSVByteCount = DEFAULT_FACELET_DIMENSION * DEFAULT_FACELET_DIMENSION * 3;
+        firstFaceletHSVOffset = firstFaceGrayOffset + (3 * faceGrayByteCount);
 
         totalRequiredMemory = frameYUVByteCount +
                               frameGrayByteCount +
                               (3 * faceGrayByteCount) +
-                              (3 * faceHSVByteCount) +
-                              (27 * faceletHSVByteCount);
+                              (54 * faceletHSVByteCount);
 
         faceletsDetector->onFrameSizeSelected(DEFAULT_FACE_DIMENSION);
     }
@@ -132,29 +140,16 @@ namespace rbdt {
 
         // Gray
         cv::cvtColor(frameYUV, frameGray, cv::COLOR_YUV2GRAY_NV21);
-        /**/
-//        imageSaver->saveImage(frameRGBA, frameNumber, "_gray");
-        /**/
 
         cropResizeAndRotate(frameGray);
-        /**/
-//        imageSaver->saveImage(frameRGBA, frameNumber, "_crop_resize_rotate");
-        /**/
 
         // Perspective transform to extract the faces
         extractFaces(frameGray, topFaceGray, leftFaceGray, rightFaceGray);
-
-        /**/
-//        imageSaver->saveImage(topFaceGray, frameNumber, "_gray_perspective_top");
-//        imageSaver->saveImage(leftFaceGray, frameNumber, "_gray_perspective_left");
-//        imageSaver->saveImage(rightFaceGray, frameNumber, "_gray_perspective_right");
-        /**/
 
         //TODO parallelize this
         std::vector<std::vector<RubikFacelet>> topFacelets = faceletsDetector->detect(topFaceGray, "top_face_", frameNumber);
         std::vector<std::vector<RubikFacelet>> leftFacelets = faceletsDetector->detect(leftFaceGray, "left_face_", frameNumber);
         std::vector<std::vector<RubikFacelet>> rightFacelets = faceletsDetector->detect(rightFaceGray, "right_face_", frameNumber);
-        //TODO
 
         bool cubeFound = !topFacelets.empty() && !leftFacelets.empty() && !rightFacelets.empty();
         if (cubeFound) {
@@ -163,17 +158,14 @@ namespace rbdt {
             // Repeat the process the gray image went through with HSV. Since this is only done once when the cube
             // is actually found it's cheaper than doing it every frame
             cv::Mat frameHSV;
-            cv::cvtColor(frameYUV, frameHSV, cv::COLOR_YUV2RGB_NV21);
-            cv::cvtColor(frameHSV, frameHSV, cv::COLOR_RGB2HSV);
+            cv::cvtColor(frameYUV, frameHSV, cv::COLOR_YUV2BGR_NV21);
+            cv::cvtColor(frameHSV, frameHSV, cv::COLOR_BGR2Lab);
 
             cropResizeAndRotate(frameHSV);
 
-            cv::Mat topFaceHSV(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC3,
-                               (uchar *) data + firstFaceHSVOffset);
-            cv::Mat leftFaceHSV(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC3,
-                                (uchar *) data + firstFaceHSVOffset + faceHSVByteCount);
-            cv::Mat rightFaceHSV(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC3,
-                                 (uchar *) data + firstFaceHSVOffset + (2 * faceHSVByteCount));
+            cv::Mat topFaceHSV(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC3);
+            cv::Mat leftFaceHSV(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC3);
+            cv::Mat rightFaceHSV(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION, CV_8UC3);
 
             extractFaces(frameHSV, topFaceHSV, leftFaceHSV, rightFaceHSV);
             // Write the facelets to the
@@ -291,7 +283,7 @@ namespace rbdt {
                 static_cast<float>(DEFAULT_DIMENSION * 0.5),
                 static_cast<float>(DEFAULT_DIMENSION * 0.5808))
         );
-        applyPerspectiveTransform(matImage, topFace, topFaceCorners, cv::Size(DEFAULT_DIMENSION, DEFAULT_DIMENSION));
+        applyPerspectiveTransform(matImage, topFace, topFaceCorners, cv::Size(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION));
 
         // Left face: top, right, left, bottom
         std::vector<cv::Point2f> leftFaceCorners;
@@ -312,7 +304,7 @@ namespace rbdt {
                 static_cast<float>(DEFAULT_DIMENSION * 0.57),
                 static_cast<float>(DEFAULT_DIMENSION * 1.0253))
         );
-        applyPerspectiveTransform(matImage, leftFace, leftFaceCorners, cv::Size(DEFAULT_DIMENSION, DEFAULT_DIMENSION));
+        applyPerspectiveTransform(matImage, leftFace, leftFaceCorners, cv::Size(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION));
 
         // Right face: top, right, left, bottom
         std::vector<cv::Point2f> rightFaceCorners;
@@ -333,13 +325,7 @@ namespace rbdt {
                 static_cast<float>(DEFAULT_DIMENSION * 0.9199 - lensOffset * cos(30 * CV_PI / 180)),
                 static_cast<float>(DEFAULT_DIMENSION * 0.7425 - lensOffset * sin(30 * CV_PI / 180)))
         );
-        applyPerspectiveTransform(matImage, rightFace, rightFaceCorners, cv::Size(DEFAULT_DIMENSION, DEFAULT_DIMENSION));
-
-        /**/
-//        imageSaver->saveImage(topFace, frameNumber, "_perspective_top");
-//        imageSaver->saveImage(leftFace, frameNumber, "_perspective_left");
-//        imageSaver->saveImage(rightFace, frameNumber, "_perspective_right");
-        /**/
+        applyPerspectiveTransform(matImage, rightFace, rightFaceCorners, cv::Size(DEFAULT_FACE_DIMENSION, DEFAULT_FACE_DIMENSION));
     }
 
     void RubikProcessorImpl::applyPerspectiveTransform(const cv::Mat &inputImage, cv::Mat &outputImage,
@@ -359,51 +345,55 @@ namespace rbdt {
     void RubikProcessorImpl::saveFacelets(std::vector<std::vector<RubikFacelet>> &topFacelets, cv::Mat &topFaceHSV,
                                           std::vector<std::vector<RubikFacelet>> &leftFacelets, cv::Mat &leftFaceHSV,
                                           std::vector<std::vector<RubikFacelet>> &rightFacelets, cv::Mat &rightFaceHSV,
-                                          const uint8_t * data) {
-        int insertedFacelets = 0;
+                                          const uint8_t *data) {
+        int savedFacelets = 0;
+        int phaseOffset = 0;
+        if (isSecondPhase) {
+            phaseOffset = 27 * faceletHSVByteCount;
+        }
         // Top
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 RubikFacelet facelet = topFacelets[i][j];
-                float innerCircleRadius = facelet.innerCircleRadius();
+                float innerCircleRadius = facelet.innerCircleRadius() / 4;
                 cv::Rect roi = cv::Rect(
                         cv::Point2f(facelet.center.x - innerCircleRadius, facelet.center.y - innerCircleRadius),
                         cv::Point2f(facelet.center.x + innerCircleRadius, facelet.center.y + innerCircleRadius)
                 );
                 cv::Mat stickerHSV(DEFAULT_FACELET_DIMENSION, DEFAULT_FACELET_DIMENSION, CV_8UC3,
-                        (uchar *) data + firstFaceletHSVOffset + (insertedFacelets * faceletHSVByteCount));
+                                   (uchar *) data + firstFaceletHSVOffset + phaseOffset + (savedFacelets * faceletHSVByteCount));
                 cv::resize(topFaceHSV(roi), stickerHSV, cv::Size(DEFAULT_FACELET_DIMENSION, DEFAULT_FACELET_DIMENSION));
-                insertedFacelets++;
+                savedFacelets++;
             }
         }
         // Left
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 RubikFacelet facelet = leftFacelets[i][j];
-                float innerCircleRadius = facelet.innerCircleRadius();
+                float innerCircleRadius = facelet.innerCircleRadius() / 4;
                 cv::Rect roi = cv::Rect(
                         cv::Point2f(facelet.center.x - innerCircleRadius, facelet.center.y - innerCircleRadius),
                         cv::Point2f(facelet.center.x + innerCircleRadius, facelet.center.y + innerCircleRadius)
                 );
                 cv::Mat stickerHSV(DEFAULT_FACELET_DIMENSION, DEFAULT_FACELET_DIMENSION, CV_8UC3,
-                                      (uchar *) data + firstFaceletHSVOffset + (insertedFacelets * faceletHSVByteCount));
+                                   (uchar *) data + firstFaceletHSVOffset + phaseOffset + (savedFacelets * faceletHSVByteCount));
                 cv::resize(leftFaceHSV(roi), stickerHSV, cv::Size(DEFAULT_FACELET_DIMENSION, DEFAULT_FACELET_DIMENSION));
-                insertedFacelets++;
+                savedFacelets++;
             }
         }
         // Right
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 RubikFacelet facelet = rightFacelets[i][j];
-                float innerCircleRadius = facelet.innerCircleRadius();
+                float innerCircleRadius = facelet.innerCircleRadius() / 4;
                 cv::Rect roi = cv::Rect(
                         cv::Point2f(facelet.center.x - innerCircleRadius, facelet.center.y - innerCircleRadius),
                         cv::Point2f(facelet.center.x + innerCircleRadius, facelet.center.y + innerCircleRadius)
                 );
                 cv::Mat stickerHSV(DEFAULT_FACELET_DIMENSION, DEFAULT_FACELET_DIMENSION, CV_8UC3,
-                                      (uchar *) data + firstFaceletHSVOffset + (insertedFacelets * faceletHSVByteCount));
+                                   (uchar *) data + firstFaceletHSVOffset + phaseOffset + (savedFacelets * faceletHSVByteCount));
                 cv::resize(rightFaceHSV(roi), stickerHSV, cv::Size(DEFAULT_FACELET_DIMENSION, DEFAULT_FACELET_DIMENSION));
-                insertedFacelets++;
+                savedFacelets++;
             }
         }
     }
@@ -427,6 +417,82 @@ namespace rbdt {
                 facelets[i][j].height *= upscalingRatio;
             }
         }
+    }
+
+    std::string RubikProcessorImpl::analyzeColorsInternal(const uint8_t *data) {
+        int processedFacelets = 0;
+        for (int i = 0; i < 54; i++) {
+            cv::Mat facelet(DEFAULT_FACELET_DIMENSION, DEFAULT_FACELET_DIMENSION, CV_8UC3,
+                            (uchar *) data + firstFaceletHSVOffset + (processedFacelets * faceletHSVByteCount));
+            cv::Mat faceletRGB;
+            cv::cvtColor(facelet, faceletRGB, cv::COLOR_Lab2BGR);
+            imageSaver->saveImage(faceletRGB, i + 1, "");
+            processedFacelets++;
+        }
+
+        std::vector<cv::Scalar_<float>> meanValues(0);
+        for (int i = 0; i < 54; i++) {
+            cv::Mat facelet(DEFAULT_FACELET_DIMENSION, DEFAULT_FACELET_DIMENSION, CV_8UC3,
+                            (uchar *) data + firstFaceletHSVOffset + (i * faceletHSVByteCount));
+
+            cv::Mat faceletDouble;
+            facelet.convertTo(faceletDouble, CV_32F);
+            cv::Scalar_<float> faceletMeans = cv::mean(faceletDouble);
+            meanValues.emplace_back(faceletMeans);
+        }
+
+        std::vector<int> labels;
+        std::vector<cv::Scalar> centers;
+        int expectedDifferentColors = 6;
+
+        cv::TermCriteria criteria(CV_TERMCRIT_ITER, 10, 1.0);
+        cv::kmeans(meanValues, expectedDifferentColors, labels, criteria, 5, cv::KmeansFlags::KMEANS_PP_CENTERS, centers);
+
+        for (int i = 0; i < 54; i++) {
+            LOG_DEBUG("TESTING",
+                      "Facelet %d with mean LAB (%.2f, %.2f, %.2f) has been labeled as part of group %d which has center on (%.2f, %.2f, %.2f)",
+                      i + 1,
+                      meanValues[i][0], meanValues[i][1], meanValues[i][2],
+                      labels[i],
+                      centers[labels[i]][0], centers[labels[i]][1], centers[labels[i]][2]);
+        }
+        //Asume it's being tested in white top, green front, red right -> yellow top, orange front, blue left
+        int whiteLabel = labels[4];
+        int greenLabel = labels[13];
+        int redLabel = labels[22];
+        int yellowLabel = labels[31];
+        int orangeLabel = labels[40];
+        int blueLabel = labels[49];
+
+        LOG_DEBUG("TESTING", "Labels: white %d, green %d, red %d, yellow %d, orange %d and blue %d",
+                  whiteLabel, greenLabel, redLabel, yellowLabel, orangeLabel, blueLabel);
+
+        std::string result = "\n";
+        for (int i = 0; i < 54; i++) {
+            std::string labelColor;
+
+            if (labels[i] == whiteLabel) {
+                result += "W";
+            } else if (labels[i] == greenLabel) {
+                result += "G";
+            } else if (labels[i] == redLabel) {
+                result += "R";
+            } else if (labels[i] == yellowLabel) {
+                result += "Y";
+            } else if (labels[i] == orangeLabel) {
+                result += "O";
+            } else if (labels[i] == blueLabel) {
+                result += "B";
+            }
+
+            if ((i + 1) % 9 == 0) {
+                result += "\n";
+            } else if ((i + 1) % 3 == 0) {
+                result += " ";
+            }
+        }
+
+        return result;
     }
 
 } //namespace rbdt

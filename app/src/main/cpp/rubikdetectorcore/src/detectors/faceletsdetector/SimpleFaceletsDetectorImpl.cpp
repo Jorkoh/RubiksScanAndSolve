@@ -77,7 +77,6 @@ namespace rbdt {
             // Find those potential facelets that match the estimated ones
             std::vector<std::vector<Circle>> facetModel = matchEstimatedWithPotentialFacelets(potentialFacelets, estimatedFacelets);
 //            saveDebugData(frameGray, filteredRectangles, referenceCircle, potentialFacelets, estimatedFacelets, frameNumber, tag);
-            facetModel[0][0] = referenceCircle;
             // Decide if the cube has been found depending on the matched facelets placement
             faceFound = verifyIfFaceFound(facetModel);
             if (faceFound) {
@@ -262,10 +261,6 @@ namespace rbdt {
         float yOffsetRow = diameterWithMargin * (float) std::sin(angle + M_PI_2);
 
         for (int i = 0; i < 9; i++) {
-            if (i == position) {
-                // skip the one being used as reference
-                continue;
-            }
             float xOffset = xOffsetColumn * (i % 3 - position % 3) + xOffsetRow * (i / 3 - position / 3);
             float yOffset = yOffsetColumn * (i % 3 - position % 3) + yOffsetRow * (i / 3 - position / 3);
             newCircles.emplace_back(referenceCircle, cv::Point2f(xOffset, yOffset));
@@ -281,7 +276,7 @@ namespace rbdt {
         std::vector<std::vector<Circle>> facetModel(3, std::vector<Circle>(3));
 
         // for each one of the estimated facelets try to find a potential facelet whose overlaps enough
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 9; i++) {
             Circle testedCircle = estimatedFacelets[i];
             for (int j = 0; j < potentialFacelets.size(); j++) {
                 if (potentialFacelets[j].contains(testedCircle.center)) {
@@ -298,8 +293,8 @@ namespace rbdt {
                     float areasRatio = intersectionArea / potentialFacelets[j].area;
                     if (areasRatio > 0.55f) {
                         // found it
-                        int auxI = (i + 1) / 3;
-                        int auxJ = (i + 1) % 3;
+                        int auxI = (i) / 3;
+                        int auxJ = (i) % 3;
                         facetModel[auxI][auxJ] = potentialFacelets[j];
                         //already found a matching rectangle, we are not interested in others. just continue
                         continue;
@@ -328,7 +323,7 @@ namespace rbdt {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (facetModel[i][j].isEmpty()) {
-                    facetModel[i][j] = estimatedFacelets[i * 3 + j - 1];
+                    facetModel[i][j] = estimatedFacelets[i * 3 + j];
                 }
             }
         }

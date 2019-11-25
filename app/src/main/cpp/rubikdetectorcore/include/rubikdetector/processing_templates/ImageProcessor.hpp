@@ -36,91 +36,95 @@ namespace rbdt {
  * the input/output frame width/height, image format, color space, etc.
  * @tparam RESULT_TYPE the type of the result
  */
-template<typename INPUT_TYPE, typename IMAGE_PROPERTIES_TYPE, typename RESULT_TYPE>
-class ImageProcessor {
-public:
+    template<typename INPUT_TYPE, typename IMAGE_PROPERTIES_TYPE, typename RESULT_TYPE>
+    class ImageProcessor {
+    public:
 
-    /**
-     * Empty virtual destructor. Technically not necessary to be explicitly declared.
-     */
-    virtual ~ImageProcessor() {}
+        /**
+         * Empty virtual destructor. Technically not necessary to be explicitly declared.
+         */
+        virtual ~ImageProcessor() {}
 
-    /**
-     * Processes the data present in the input type. The input type is expected to be either an array, or contain an array of size equal to the value
-     * returned by ImageProcessor::getRequiredMemory().
-     *
-     * Within this data array, the input frame data is required to be at the offset returned by ImageProcessor::getInputFrameBufferOffset(), and
-     * to have a byte length equal to ImageProcessor::getInputFrameByteCount().
-     *
-     * If the input frame is modified during processing (e.g. shapes are drawn over the input frame), the results of these modifications will be
-     * present as an "output frame". This output frame will be written back in the data array at an offset equal to ImageProcessor::getOutputFrameBufferOffset(),
-     * and will have a byte length equal to ImageProcessor::getOutputFrameByteCount().
-     *
-     * @param [in/out] imageData.
-     * @return nullptr if nothing is detected in the current frame, or RESULT_TYPE if something is found.
-     */
-    virtual bool process(INPUT_TYPE inputFrame)=0;
+        /**
+         * Processes the data present in the input type. The input type is expected to be either an array, or contain an array of size equal to the value
+         * returned by ImageProcessor::getRequiredMemory().
+         *
+         * Within this data array, the input frame data is required to be at the offset returned by ImageProcessor::getInputFrameBufferOffset(), and
+         * to have a byte length equal to ImageProcessor::getInputFrameByteCount().
+         *
+         * If the input frame is modified during processing (e.g. shapes are drawn over the input frame), the results of these modifications will be
+         * present as an "output frame". This output frame will be written back in the data array at an offset equal to ImageProcessor::getOutputFrameBufferOffset(),
+         * and will have a byte length equal to ImageProcessor::getOutputFrameByteCount().
+         *
+         * @param [in/out] imageData.
+         * @return nullptr if nothing is detected in the current frame, or RESULT_TYPE if something is found.
+         */
+        virtual bool process(INPUT_TYPE inputFrame) = 0;
 
-    /**
-     * Notifies the Processor that the frame size, format or other image property of the either the input or output frame has changed.
-     *
-     * This causes the processor to recompute its required memory & update the memory layout used when ImageProcessor::process() is called. As a
-     * consequence, following this call, the output of the following methods might change:
-     *   - ImageProcessor::getRequiredMemory()
-     *   - ImageProcessor::getOutputFrameBufferOffset()
-     *   - ImageProcessor::getOutputFrameByteCount()
-     *   - ImageProcessor::getInputFrameByteCount()
-     *   - ImageProcessor::getInputFrameBufferOffset()
-     *
-     * @param imageProperties an implementation specific image properties data holder, IMAGE_PROPERTIES_TYPE, which contains updated values.
-     */
-    virtual void updateImageProperties(IMAGE_PROPERTIES_TYPE imageProperties)=0;
+        virtual std::string processColors(INPUT_TYPE inputFrame) = 0;
 
-    /**
-     * Returns the total required size in bytes of the array passed to ImageProcessor::process(), given the ImageProperties currently set on the Processor.
-     *
-     * The value returned here is recomputed each time ImageProcessor::updateImageProperties() is called.
-     *
-     * @return required bytes, as an int.
-     */
-    virtual int getRequiredMemory()=0;
+        virtual void updateScanPhase(const bool &isSecondPhase) = 0;
 
-    /**
-     * Returns the input data offset in bytes, relative to the start of the byte array provided in ImageProcessor::process().
-     *
-     * The value returned here is recomputed each time ImageProcessor::updateImageProperties() is called.
-     *
-     * @return int frame offset, in bytes.
-     */
-    virtual int getFrameYUVBufferOffset()=0;
+        /**
+         * Notifies the Processor that the frame size, format or other image property of the either the input or output frame has changed.
+         *
+         * This causes the processor to recompute its required memory & update the memory layout used when ImageProcessor::process() is called. As a
+         * consequence, following this call, the output of the following methods might change:
+         *   - ImageProcessor::getRequiredMemory()
+         *   - ImageProcessor::getOutputFrameBufferOffset()
+         *   - ImageProcessor::getOutputFrameByteCount()
+         *   - ImageProcessor::getInputFrameByteCount()
+         *   - ImageProcessor::getInputFrameBufferOffset()
+         *
+         * @param imageProperties an implementation specific image properties data holder, IMAGE_PROPERTIES_TYPE, which contains updated values.
+         */
+        virtual void updateImageProperties(IMAGE_PROPERTIES_TYPE imageProperties) = 0;
 
-    /**
-     * Returns the expected size in bytes of the input frame.
-     *
-     * The value returned here is recomputed each time ImageProcessor::updateImageProperties() is called.
-     *
-     * @return int expected input frame size, in bytes.
-     */
-    virtual int getFrameYUVByteCount()=0;
+        /**
+         * Returns the total required size in bytes of the array passed to ImageProcessor::process(), given the ImageProperties currently set on the Processor.
+         *
+         * The value returned here is recomputed each time ImageProcessor::updateImageProperties() is called.
+         *
+         * @return required bytes, as an int.
+         */
+        virtual int getRequiredMemory() = 0;
 
-    /**
-     * Returns the output data offset in bytes, relative to the start of the byte array provided in ImageProcessor::process().
-     *
-     * The value returned here is recomputed each time ImageProcessor::updateImageProperties() is called.
-     *
-     * @return int frame offset, in bytes.
-     * */
-    virtual int getFrameRGBABufferOffset()=0;
+        /**
+         * Returns the input data offset in bytes, relative to the start of the byte array provided in ImageProcessor::process().
+         *
+         * The value returned here is recomputed each time ImageProcessor::updateImageProperties() is called.
+         *
+         * @return int frame offset, in bytes.
+         */
+        virtual int getFrameYUVBufferOffset() = 0;
 
-    /**
-     * Returns the expected size in bytes of the output frame.
-     *
-     * The value returned here is recomputed each time ImageProcessor::updateImageProperties() is called.
-     *
-     * @return int expected output frame size, in bytes.
-     */
-    virtual int getFaceletsByteCount()=0;
+        /**
+         * Returns the expected size in bytes of the input frame.
+         *
+         * The value returned here is recomputed each time ImageProcessor::updateImageProperties() is called.
+         *
+         * @return int expected input frame size, in bytes.
+         */
+        virtual int getFrameYUVByteCount() = 0;
 
-};
+        /**
+         * Returns the output data offset in bytes, relative to the start of the byte array provided in ImageProcessor::process().
+         *
+         * The value returned here is recomputed each time ImageProcessor::updateImageProperties() is called.
+         *
+         * @return int frame offset, in bytes.
+         * */
+        virtual int getFrameRGBABufferOffset() = 0;
+
+        /**
+         * Returns the expected size in bytes of the output frame.
+         *
+         * The value returned here is recomputed each time ImageProcessor::updateImageProperties() is called.
+         *
+         * @return int expected output frame size, in bytes.
+         */
+        virtual int getFaceletsByteCount() = 0;
+
+    };
 } //end namespace rbdt
 #endif //RUBIKDETECTOR_IMAGEPROCESSOR_HPP

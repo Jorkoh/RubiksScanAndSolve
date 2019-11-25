@@ -1,4 +1,4 @@
-package com.jorkoh.rubiksscanandsolve.Scan
+package com.jorkoh.rubiksscanandsolve.scan
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -17,8 +17,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.jorkoh.rubiksscanandsolve.R
-import com.jorkoh.rubiksscanandsolve.Scan.ScanViewModel.ScanStages.*
-import com.jorkoh.rubiksscanandsolve.Scan.utils.AutoFitPreviewBuilder
+import com.jorkoh.rubiksscanandsolve.scan.ScanViewModel.ScanStages.*
+import com.jorkoh.rubiksscanandsolve.scan.utils.AutoFitPreviewBuilder
 import kotlinx.android.synthetic.main.fragment_scan.*
 import kotlinx.android.synthetic.main.fragment_scan.view.*
 import permissions.dispatcher.*
@@ -28,7 +28,7 @@ import java.util.concurrent.Executors
 @RuntimePermissions
 class ScanFragment : Fragment() {
 
-    private lateinit var scanVM : ScanViewModel
+    private lateinit var scanVM: ScanViewModel
 
     private val executor = Executors.newCachedThreadPool()
 
@@ -61,7 +61,10 @@ class ScanFragment : Fragment() {
     ): View? {
         return inflater.inflate(R.layout.fragment_scan, container, false).apply {
             button_scan.setOnClickListener {
-                scanVM.startScanning()
+                scanVM.startStopScanning()
+            }
+            button_switch_flash.setOnClickListener {
+                scanVM.switchFlash()
             }
         }
     }
@@ -75,7 +78,6 @@ class ScanFragment : Fragment() {
         view_finder.post {
             displayId = view_finder.display.displayId
 
-            updateCameraUI()
             enableScannerWithPermissionCheck()
         }
     }
@@ -84,28 +86,53 @@ class ScanFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
         scanVM = ViewModelProviders.of(this)[ScanViewModel::class.java]
         scanVM.scanStage.observe(viewLifecycleOwner, Observer { stage ->
-            when(stage){
-                PRE_FIRST_SCAN, PRE_SECOND_SCAN -> {
+            when (stage) {
+                PRE_FIRST_SCAN -> {
                     view_finder_overlay.background.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_ATOP)
                     button_scan.isEnabled = true
+                    button_scan.text = "START SCANNER"
+                    text_view_stage.text = "WAITING FIRST SCAN"
                 }
-                FIRST_SCAN, SECOND_SCAN -> {
+                PRE_SECOND_SCAN -> {
+                    view_finder_overlay.background.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_ATOP)
+                    button_scan.isEnabled = true
+                    button_scan.text = "START SCANNER"
+                    text_view_stage.text = "WAITING SECOND SCAN"
+                }
+                FIRST_SCAN -> {
                     view_finder_overlay.background.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP)
-                    button_scan.isEnabled = false
+                    button_scan.isEnabled = true
+                    button_scan.text = "STOP SCANNER"
+                    text_view_stage.text = "FIRST SCAN"
+                }
+                SECOND_SCAN -> {
+                    view_finder_overlay.background.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP)
+                    button_scan.isEnabled = true
+                    button_scan.text = "STOP SCANNER"
+                    text_view_stage.text = "SECOND SCAN"
                 }
                 DONE -> {
                     view_finder_overlay.background.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_ATOP)
                     button_scan.isEnabled = false
+                    button_scan.text = "DONE"
+                    text_view_stage.text = "DONE"
                 }
-                else ->{
+                else -> {
                     // Do nothing
                 }
             }
         })
-    }
-
-    private fun updateCameraUI() {
-        //TODO build overlay controls here if needed
+        scanVM.scanResult.observe(viewLifecycleOwner, Observer { scanResult ->
+            text_view_scan_result.text = scanResult
+        })
+        scanVM.flashEnabled.observe(viewLifecycleOwner, Observer { flashEnabled ->
+            preview?.enableTorch(flashEnabled)
+            button_switch_flash.text = if (flashEnabled) {
+                "TURN OFF FLASH"
+            } else {
+                "TURN ON FLASH"
+            }
+        })
     }
 
     @SuppressLint("RestrictedApi")

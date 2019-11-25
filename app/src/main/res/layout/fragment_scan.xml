@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Scan.ScanFragment">
+    tools:context=".scan.ScanFragment">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/card_preview"
@@ -36,10 +36,21 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text="Scan"
         android:enabled="false"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:text=""
+        app:layout_constraintEnd_toStartOf="@id/button_switch_flash"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/card_preview" />
+
+    <Button
+        android:id="@+id/button_switch_flash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text=""
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/button_scan"
         app:layout_constraintTop_toBottomOf="@+id/card_preview" />
 
 
@@ -63,5 +74,26 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.9" />
+
+    <TextView
+        android:id="@+id/text_view_scan_result"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_end_preview"
+        app:layout_constraintStart_toStartOf="@+id/guideline_start_preview"
+        app:layout_constraintTop_toBottomOf="@+id/button_scan" />
+
+    <TextView
+        android:id="@+id/text_view_stage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        app:layout_constraintBottom_toTopOf="@+id/card_preview"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_end_preview"
+        app:layout_constraintStart_toStartOf="@+id/guideline_start_preview"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

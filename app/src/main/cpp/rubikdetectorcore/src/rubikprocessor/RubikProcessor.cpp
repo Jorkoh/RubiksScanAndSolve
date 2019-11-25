@@ -29,6 +29,14 @@ namespace rbdt {
         return behavior->process(imageData);
     }
 
+    std::string RubikProcessor::processColors(const uint8_t *imageData) {
+        return behavior->processColors(imageData);
+    }
+
+    void RubikProcessor::updateScanPhase(const bool &isSecondPhase) {
+        behavior->updateScanPhase(isSecondPhase);
+    }
+
     void RubikProcessor::updateImageProperties(const ImageProperties &imageProperties) {
         behavior->updateImageProperties(imageProperties);
     }
