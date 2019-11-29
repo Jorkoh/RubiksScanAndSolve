@@ -75,23 +75,9 @@ public:
      */
     virtual ~RubikProcessor();
 
-    /**
-     * Processes the data present in the input array. The input array is expected to have a size equal to the value
-     * returned by ImageProcessor::getRequiredMemory().
-     *
-     * Within the array, the input frame data is required to be at the offset returned by ImageProcessor::getInputFrameBufferOffset(), and
-     * to have a byte length equal to ImageProcessor::getInputFrameByteCount().
-     *
-     * If the input frame is modified during processing due to the settings present in the active DrawConfig, the result of the drawing will be
-     * present as an "output frame". This output frame will be written back in the array at an offset equal to ImageProcessor::getOutputFrameBufferOffset(),
-     * and will have a byte length equal to ImageProcessor::getOutputFrameByteCount().
-     *
-     * @param [in/out] imageData.
-     * @return nullptr if nothing is detected in the current frame, or a 3x3 2d std::vector of RubikFacelet objects, if the cube face is found.
-     *
-     * @see ImageProcessor::process()
-     */
-    bool process(const uint8_t *imageData) override;
+    bool processScan(const uint8_t *scanData) override;
+
+    bool processPhoto(const uint8_t *scanData, const uint8_t *photoData) override;
 
     std::string processColors(const uint8_t *imageData) override;
 
@@ -119,16 +105,8 @@ public:
 private:
     friend class RubikProcessorBuilder;
 
-    /**
-     * Private constructor only called by the RubikProcessorBuilder.
-     * @param imageProperties ImageProperties object representing the initial image properties.
-     * @param faceletsDetector RubikFaceletsDetector which will be used to detect the Rubik's Cube facelets
-     * @param colorDetector RubikColorDetector used to detect the facelets colors
-     * @param drawController FaceletsDrawController used to draw the result over the image
-     * @param imageSaver ImageSaver used to save debug frames on disk, if the processor is is debug mode
-     * @return a RubikProcessor
-     */
-    RubikProcessor(const ImageProperties imageProperties,
+    RubikProcessor(const ImageProperties scanProperties,
+                   const ImageProperties photoProperties,
                    std::unique_ptr<RubikFaceletsDetector> faceletsDetector,
                    std::unique_ptr<RubikColorDetector> colorDetector,
                    std::unique_ptr<FaceletsDrawController> drawController,

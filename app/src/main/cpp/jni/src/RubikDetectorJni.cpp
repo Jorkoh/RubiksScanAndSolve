@@ -22,12 +22,12 @@ extern "C" {
 JNIEXPORT jlong JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeCreateRubikDetector(JNIEnv *env,
                                                                                          jobject instance,
-                                                                                         jint rotationDegrees,
-                                                                                         jint frameWidth,
-                                                                                         jint frameHeight,
-                                                                                         jint drawMode,
-                                                                                         jint strokeWidth,
-                                                                                         jboolean fillShape,
+                                                                                         jint scanRotation,
+                                                                                         jint scanWidth,
+                                                                                         jint scanHeight,
+                                                                                         jint photoRotation,
+                                                                                         jint photoWidth,
+                                                                                         jint photoHeight,
                                                                                          jstring storagePath) {
     std::shared_ptr<rbdt::ImageSaver> imageSaver;
     if (storagePath != NULL) {
@@ -39,11 +39,10 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeCreateRubik
     }
 
     rbdt::RubikProcessor *rubikDetector = rbdt::RubikProcessorBuilder()
-            .rotation((int) rotationDegrees)
-            .inputFrameSize((int) frameWidth, (int) frameHeight)
-            .drawConfig(rbdt::DrawConfig(rbdt_jni::drawModeFromInt((int) drawMode),
-                                         (int) strokeWidth,
-                                         (bool) fillShape))
+            .scanRotation((int) scanRotation)
+            .photoRotation((int) photoRotation)
+            .scanSize((int) scanWidth, (int) scanHeight)
+            .photoSize((int) photoWidth, (int) photoHeight)
             .imageSaver(imageSaver)
             .build();
     return reinterpret_cast<jlong>(rubikDetector);
@@ -61,7 +60,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeReleaseCube
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCube(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeScanCube(JNIEnv *env,
                                                                               jobject instance,
                                                                               jlong cubeDetectorHandle,
                                                                               jbyteArray imageByteData) {
@@ -72,24 +71,47 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCube(JN
     if (ptr) {
         uint8_t *ptrAsInt = reinterpret_cast<uint8_t *>(ptr);
         env->ReleasePrimitiveArrayCritical(imageByteData, ptr, JNI_ABORT);
-        return static_cast<jboolean>(cubeDetector.process(ptrAsInt));
+        return static_cast<jboolean>(cubeDetector.processScan(ptrAsInt));
     } else {
-        LOG_WARN("RUBIK_JNI_PART.cpp","Could not obtain image byte array. No processing performed.");
+        LOG_WARN("RUBIK_JNI_PART.cpp", "Could not obtain image byte array. No processing performed.");
         return static_cast<jboolean>(false);
     }
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCubeDataBuffer(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeScanCubeDataBuffer(JNIEnv *env,
                                                                                         jobject instance,
                                                                                         jlong cubeDetectorHandle,
-                                                                                        jobject imageDataDirectBuffer) {
+                                                                                        jobject scanDataDirectBuffer) {
     rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
 
-    void *ptr = env->GetDirectBufferAddress(imageDataDirectBuffer);
+    void *ptr = env->GetDirectBufferAddress(scanDataDirectBuffer);
     if (ptr) {
         uint8_t *ptrAsInt = reinterpret_cast<uint8_t *>(ptr);
-        return static_cast<jboolean>(cubeDetector.process(ptrAsInt));
+        return static_cast<jboolean>(cubeDetector.processScan(ptrAsInt));
+    } else {
+        LOG_WARN("RUBIK_JNI_PART.cpp",
+                 "Could not obtain image byte array. No processing performed.");
+        return static_cast<jboolean>(false);
+    }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeExtractFaceletsDataBuffer(JNIEnv *env,
+                                                                                               jobject instance,
+                                                                                               jlong cubeDetectorHandle,
+                                                                                               jobject scanDataDirectBuffer,
+                                                                                               jbyteArray photoData) {
+    rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
+
+    void *ptr = env->GetDirectBufferAddress(scanDataDirectBuffer);
+    jboolean isCopy = 3; //some arbitrary value
+    void *ptr2 = env->GetPrimitiveArrayCritical(photoData, &isCopy);
+    if (ptr && ptr2) {
+        uint8_t *ptrAsInt = reinterpret_cast<uint8_t *>(ptr);
+        uint8_t *ptrAsInt2 = reinterpret_cast<uint8_t *>(ptr2);
+        env->ReleasePrimitiveArrayCritical(photoData, ptr2, JNI_ABORT);
+        return static_cast<jboolean>(cubeDetector.processPhoto(ptrAsInt, ptrAsInt2));
     } else {
         LOG_WARN("RUBIK_JNI_PART.cpp",
                  "Could not obtain image byte array. No processing performed.");
@@ -99,9 +121,9 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeFindCubeDat
 
 JNIEXPORT jstring JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeAnalyzeColorsDataBuffer(JNIEnv *env,
-                                                                                        jobject instance,
-                                                                                        jlong cubeDetectorHandle,
-                                                                                        jobject imageDataDirectBuffer) {
+                                                                                             jobject instance,
+                                                                                             jlong cubeDetectorHandle,
+                                                                                             jobject imageDataDirectBuffer) {
     rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
 
     void *ptr = env->GetDirectBufferAddress(imageDataDirectBuffer);
@@ -117,20 +139,20 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeAnalyzeColo
 
 JNIEXPORT void JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetScanPhase(JNIEnv *env,
-                                                                                        jobject instance,
-                                                                                        jlong cubeDetectorHandle,
-                                                                                        jboolean isSecondPhase) {
+                                                                                  jobject instance,
+                                                                                  jlong cubeDetectorHandle,
+                                                                                  jboolean isSecondPhase) {
     rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
     cubeDetector.updateScanPhase((bool) isSecondPhase);
 }
 
 JNIEXPORT void JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetImageProperties(JNIEnv *env,
-                                                                                        jobject instance,
-                                                                                        jlong cubeDetectorHandle,
-                                                                                        jint rotation,
-                                                                                        jint width,
-                                                                                        jint height) {
+Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetScanProperties(JNIEnv *env,
+                                                                                       jobject instance,
+                                                                                       jlong cubeDetectorHandle,
+                                                                                       jint rotation,
+                                                                                       jint width,
+                                                                                       jint height) {
     rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
     cubeDetector.updateImageProperties(rbdt::ImageProperties((int) rotation, (int) width, (int) height));
 }

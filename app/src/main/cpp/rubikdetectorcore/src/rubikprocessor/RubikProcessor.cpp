@@ -9,13 +9,15 @@
 
 namespace rbdt {
 
-    RubikProcessor::RubikProcessor(const ImageProperties imageProperties,
+    RubikProcessor::RubikProcessor(const ImageProperties scanProperties,
+                                   const ImageProperties photoProperties,
                                    std::unique_ptr<RubikFaceletsDetector> faceletsDetector,
                                    std::unique_ptr<RubikColorDetector> colorDetector,
                                    std::unique_ptr<FaceletsDrawController> faceletsDrawController,
                                    std::shared_ptr<ImageSaver> imageSaver)
             : behavior(std::unique_ptr<RubikProcessorImpl>(
-            new RubikProcessorImpl(imageProperties,
+            new RubikProcessorImpl(scanProperties,
+                                   photoProperties,
                                    std::move(faceletsDetector),
                                    std::move(colorDetector),
                                    std::move(faceletsDrawController),
@@ -25,8 +27,12 @@ namespace rbdt {
         LOG_DEBUG("NativeRubikProcessor", "RubikProcessor - destructor.");
     }
 
-    bool RubikProcessor::process(const uint8_t *imageData) {
-        return behavior->process(imageData);
+    bool RubikProcessor::processScan(const uint8_t *scanData) {
+        return behavior->processScan(scanData);
+    }
+
+    bool RubikProcessor::processPhoto(const uint8_t *scanData, const uint8_t *photoData) {
+        return behavior->processPhoto(scanData, photoData);
     }
 
     std::string RubikProcessor::processColors(const uint8_t *imageData) {

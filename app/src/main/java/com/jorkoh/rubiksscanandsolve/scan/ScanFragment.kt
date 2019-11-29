@@ -4,9 +4,11 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.graphics.ImageFormat
 import android.graphics.PorterDuff
 import android.hardware.display.DisplayManager
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -111,6 +113,28 @@ class ScanFragment : Fragment() {
                     button_scan.text = "STOP SCANNER"
                     text_view_stage.text = "SECOND SCAN"
                 }
+                FIRST_PHOTO -> {
+                    view_finder_overlay.background.setColorFilter(Color.BLUE, PorterDuff.Mode.SRC_ATOP)
+                    text_view_stage.text = "FIRST PHOTO"
+                    button_scan.isEnabled = true
+                    imageCapture?.takePicture(executor, object : ImageCapture.OnImageCapturedListener() {
+                        override fun onCaptureSuccess(image: ImageProxy, rotationDegrees: Int) {
+                            scanVM.processPhoto(image, rotationDegrees)
+                            super.onCaptureSuccess(image, rotationDegrees)
+                        }
+                    })
+                }
+                SECOND_PHOTO -> {
+                    view_finder_overlay.background.setColorFilter(Color.BLUE, PorterDuff.Mode.SRC_ATOP)
+                    text_view_stage.text = "SECOND PHOTO"
+                    button_scan.isEnabled = true
+                    imageCapture?.takePicture(executor, object : ImageCapture.OnImageCapturedListener() {
+                        override fun onCaptureSuccess(image: ImageProxy, rotationDegrees: Int) {
+                            scanVM.processPhoto(image, rotationDegrees)
+                            super.onCaptureSuccess(image, rotationDegrees)
+                        }
+                    })
+                }
                 DONE -> {
                     view_finder_overlay.background.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_ATOP)
                     button_scan.isEnabled = false
@@ -155,11 +179,22 @@ class ScanFragment : Fragment() {
         }.build()
         imageAnalyzer = ImageAnalysis(analyzerConfig).apply {
             setAnalyzer(executor, ImageAnalysis.Analyzer { image, rotation ->
-                scanVM.processFrame(image, rotation)
+                scanVM.processScanFrame(image, rotation)
             })
         }
 
-        CameraX.bindToLifecycle(viewLifecycleOwner, preview, imageAnalyzer)
+        // Set up the capture use case to allow users to take photos
+        val imageCaptureConfig = ImageCaptureConfig.Builder().apply {
+            setLensFacing(CameraX.LensFacing.BACK)
+            setBufferFormat(ImageFormat.YUV_420_888)
+            setCaptureMode(ImageCapture.CaptureMode.MAX_QUALITY)
+            setTargetAspectRatio(AspectRatio.RATIO_4_3)
+            setTargetRotation(view_finder.display.rotation)
+        }.build()
+
+        imageCapture = ImageCapture(imageCaptureConfig)
+
+        CameraX.bindToLifecycle(viewLifecycleOwner, preview, imageAnalyzer, imageCapture)
     }
 
     override fun onDestroyView() {

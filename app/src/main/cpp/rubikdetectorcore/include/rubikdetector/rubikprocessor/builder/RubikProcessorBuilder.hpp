@@ -52,26 +52,13 @@ namespace rbdt {
          */
         RubikProcessorBuilder();
 
-        /**
-        * Set the rotation of the input frame.
-        *
-        * This can later be changed through RubikProcessor::updateImageProperties().
-        *
-        * @param [in] rotation in degrees
-        * @return the same RubikProcessorBuilder instance
-        */
-        RubikProcessorBuilder &rotation(int rotation);
+        RubikProcessorBuilder &scanRotation(int rotation);
 
-        /**
-         * Set the resolution of the input & output frames.
-         *
-         * This can later be changed through RubikProcessor::updateImageProperties().
-         *
-         * @param [in] width in pixels
-         * @param [in] height in pixels
-         * @return the same RubikProcessorBuilder instance
-         */
-        RubikProcessorBuilder &inputFrameSize(int width, int height);
+        RubikProcessorBuilder &photoRotation(int rotation);
+
+        RubikProcessorBuilder &scanSize(int width, int height);
+
+        RubikProcessorBuilder &photoSize(int width, int height);
 
         /**
          * Specifies the DrawConfig. Drawing only occurs when the facelets are found. If you wish to not draw even
@@ -125,17 +112,29 @@ namespace rbdt {
 
     private:
 
-        static constexpr int DEFAULT_ROTATION = 0;
+        static constexpr int DEFAULT_SCAN_ROTATION = 90;
 
-        static constexpr int DEFAULT_WIDTH = 640;
+        static constexpr int DEFAULT_SCAN_WIDTH = 640;
 
-        static constexpr int DEFAULT_HEIGHT = 480;
+        static constexpr int DEFAULT_SCAN_HEIGHT = 480;
 
-        int mRotation;
+        static constexpr int DEFAULT_PHOTO_ROTATION = 90;
 
-        int mFrameWidth;
+        static constexpr int DEFAULT_PHOTO_WIDTH = 4032;
 
-        int mFrameHeight;
+        static constexpr int DEFAULT_PHOTO_HEIGHT = 3024;
+
+        int mScanRotation;
+
+        int mPhotoRotation;
+
+        int mScanWidth;
+
+        int mPhotoWidth;
+
+        int mScanHeight;
+
+        int mPhotoHeight;
 
         DrawConfig mDrawConfig;
 

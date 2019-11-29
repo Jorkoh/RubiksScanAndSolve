@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.jorkoh.rubiksscanandsolve.rubikdetector.RubikDetector
 import com.jorkoh.rubiksscanandsolve.rubikdetector.RubikDetectorUtils
+import com.jorkoh.rubiksscanandsolve.rubiksolver.Search
 import com.jorkoh.rubiksscanandsolve.scan.ScanViewModel.ScanStages.*
 import java.nio.ByteBuffer
 
@@ -15,8 +16,10 @@ class ScanViewModel : ViewModel() {
     enum class ScanStages {
         PRE_FIRST_SCAN,
         FIRST_SCAN,
+        FIRST_PHOTO,
         PRE_SECOND_SCAN,
         SECOND_SCAN,
+        SECOND_PHOTO,
         DONE
     }
 
@@ -33,36 +36,77 @@ class ScanViewModel : ViewModel() {
     private val _flashEnabled = MutableLiveData<Boolean>(false)
 
     private val rubikDetector: RubikDetector = RubikDetector.Builder()
-        .inputFrameRotation(90)
-        .inputFrameSize(640, 480)
+        .scanRotation(90)
+        .scanSize(640, 480)
+        .photoRotation(90)
+        .photoSize(4032, 3024)
         .imageSavePath("${Environment.getExternalStorageDirectory()}/Rubik/")
         .build()
 
-    private var imageDataBuffer = ByteBuffer.allocateDirect(rubikDetector.requiredMemory)
+    private var scanDataBuffer = ByteBuffer.allocateDirect(rubikDetector.requiredMemory)
 
-    fun processFrame(image: ImageProxy, rotation: Int) {
+    fun processScanFrame(image: ImageProxy, rotation: Int) {
         if (scanStage.value != FIRST_SCAN && scanStage.value != SECOND_SCAN) {
             // Not actively scanning, ignore the frame
             return
         }
 
-        if (image.width != rubikDetector.frameWidth || image.height != rubikDetector.frameHeight || rotation != rubikDetector.frameRotation) {
-            rubikDetector.updateImageProperties(rotation, image.width, image.height)
-            imageDataBuffer = ByteBuffer.allocateDirect(rubikDetector.requiredMemory)
+        if (image.width != rubikDetector.scanWidth || image.height != rubikDetector.scanHeight || rotation != rubikDetector.scanRotation) {
+            rubikDetector.updateScanProperties(rotation, image.width, image.height)
+            scanDataBuffer = ByteBuffer.allocateDirect(rubikDetector.requiredMemory)
         }
 
         val imageData = RubikDetectorUtils.YUV_420_888toNV21(image.image)
-        imageDataBuffer.clear()
-        imageDataBuffer.put(imageData, 0, imageData.size)
+        scanDataBuffer.clear()
+        scanDataBuffer.put(imageData, 0, imageData.size)
 
-        if (rubikDetector.findCube(imageDataBuffer)) {
+        if (rubikDetector.scanCube(scanDataBuffer)) {
             when (scanStage.value) {
                 FIRST_SCAN -> {
-                    _scanStage.postValue(PRE_SECOND_SCAN)
+                    _scanStage.postValue(FIRST_PHOTO)
                 }
                 SECOND_SCAN -> {
-                    _scanResult.postValue(rubikDetector.analyzeColors(imageDataBuffer))
+                    _scanStage.postValue(SECOND_PHOTO)
+                }
+                else -> {
+                    // Do nothing
+                }
+            }
+        }
+    }
+
+    fun processPhoto(image: ImageProxy, rotation: Int) {
+        if (scanStage.value != FIRST_PHOTO && scanStage.value != SECOND_PHOTO) {
+            // Not taking a photo, ignore it
+            return
+        }
+
+        if (image.width != rubikDetector.photoWidth || image.height != rubikDetector.photoHeight || rotation != rubikDetector.photoRotation) {
+            rubikDetector.updatePhotoProperties(rotation, image.width, image.height)
+        }
+
+        if (rubikDetector.extractFacelets(scanDataBuffer, RubikDetectorUtils.YUV_420_888toNV21(image.image))) {
+            when (scanStage.value) {
+                FIRST_PHOTO -> {
+                    _scanStage.postValue(PRE_SECOND_SCAN)
+                }
+                SECOND_PHOTO -> {
+                    val scramble = rubikDetector.analyzeColors(scanDataBuffer)
+                    val solution = Search().solution(scramble, 21, 100000000, 0, 0)
+                    _scanResult.postValue("$scramble\n $solution")
                     _scanStage.postValue(DONE)
+                }
+                else -> {
+                    // Do nothing
+                }
+            }
+        } else {
+            when (scanStage.value) {
+                FIRST_PHOTO -> {
+                    _scanStage.postValue(FIRST_SCAN)
+                }
+                SECOND_PHOTO -> {
+                    _scanStage.postValue(SECOND_SCAN)
                 }
                 else -> {
                     // Do nothing
@@ -74,16 +118,17 @@ class ScanViewModel : ViewModel() {
     fun startStopScanning() {
         when (scanStage.value) {
             PRE_FIRST_SCAN -> {
+                rubikDetector.updateScanPhase(false)
                 _scanStage.postValue(FIRST_SCAN)
             }
             PRE_SECOND_SCAN -> {
                 rubikDetector.updateScanPhase(true)
                 _scanStage.postValue(SECOND_SCAN)
             }
-            FIRST_SCAN -> {
+            FIRST_SCAN, FIRST_PHOTO -> {
                 _scanStage.postValue(PRE_FIRST_SCAN)
             }
-            SECOND_SCAN -> {
+            SECOND_SCAN, SECOND_PHOTO -> {
                 _scanStage.postValue(PRE_SECOND_SCAN)
             }
             else -> {

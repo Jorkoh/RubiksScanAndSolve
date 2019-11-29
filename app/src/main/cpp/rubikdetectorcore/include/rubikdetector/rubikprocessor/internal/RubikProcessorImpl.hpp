@@ -15,6 +15,7 @@
 #include "../../data/config/DrawConfig.hpp"
 #include "../../drawing/FaceletsDrawController.hpp"
 #include "../../rubikprocessor/RubikProcessor.hpp"
+#include "../../data/config/ImageProperties.hpp"
 #include <iostream>
 #include <memory>
 
@@ -66,10 +67,9 @@ namespace rbdt {
     public:
         virtual ~RubikProcessorImpl();
 
-        /**
-         * @copydoc RubikProcessor::process()
-         */
-        bool process(const uint8_t *imageData) override;
+        bool processScan(const uint8_t *scanData) override;
+
+        bool processPhoto(const uint8_t *scanData, const uint8_t *photoData) override;
 
         std::string processColors(const uint8_t *imageData) override;
 
@@ -87,49 +87,28 @@ namespace rbdt {
 
         int getFrameYUVBufferOffset() override;
 
-        /**
-         * @copydoc RubikProcessor::updateDrawConfig()
-         */
         void updateDrawConfig(DrawConfig drawConfig);
 
     private:
         friend class RubikProcessor;
 
-        /**
-         * Private constructor only called by the RubikProcessor.
-         * @param imageProperties ImageProperties object representing the initial image properties.
-         * @param faceletsDetector RubikFaceletsDetector which will be used to detect the Rubik's Cube facelets
-         * @param colorDetector RubikColorDetector used to detect the facelets colors
-         * @param drawController FaceletsDrawController used to draw the result over the image
-         * @param imageSaver ImageSaver used to save debug frames on disk, if the processor is is debug mode
-         * @return a RubikProcessorImpl
-         */
-        RubikProcessorImpl(const ImageProperties imageProperties,
+        RubikProcessorImpl(const ImageProperties scanProperties,
+                           const ImageProperties photoProperties,
                            std::unique_ptr<RubikFaceletsDetector> faceletsDetector,
                            std::unique_ptr<RubikColorDetector> colorDetector,
                            std::unique_ptr<FaceletsDrawController> faceletsDrawController,
                            std::shared_ptr<ImageSaver> imageSaver);
 
-        bool findCubeInternal(const uint8_t *data);
+        bool scanCubeInternal(const uint8_t *scanData);
+
+        bool extractFaceletsInternal(const uint8_t *scanData, const uint8_t *photoData);
 
         std::string analyzeColorsInternal(const uint8_t *data);
 
-        /**
-         * Extracts the color of each RubikFacelet in the array, then updates its color to match its detected color.
-         *
-         * This method relies on the RubikColorDetector instance associated with this RubikProcessor to detect the colors.
-         *
-         * @param [in] currentFrame The input frame which contains the detected facelet, which will be used to extract their colors.
-         * @param [in] facetModel 3x3 std::vector of detected facelets.
-         *
-         * @return a 3x3 std::vector of RubikFacelet object with their correct colors set.
-         */
-        std::vector<std::vector<RubikFacelet::Color>> detectFacetColors(const cv::Mat &currentFrame,
-                                                                        const std::vector<std::vector<RubikFacelet>> facetModel);
-
         void rotateMat(cv::Mat &matImage, int rotFlag);
 
-        void cropResizeAndRotate(cv::Mat &matImage);
+        void cropResizeAndRotate(cv::Mat &matImage, bool needsCrop, const cv::Rect& croppingRegion,
+                                 int frameDimension, bool needsResize, int rotation);
 
         void extractFaces(cv::Mat &matImage, cv::Mat &topFace, cv::Mat &leftFace, cv::Mat &rightFace);
 
@@ -139,44 +118,19 @@ namespace rbdt {
         void saveFacelets(std::vector<std::vector<RubikFacelet>> &topFacelets, cv::Mat &topFaceHSV,
                           std::vector<std::vector<RubikFacelet>> &leftFacelets, cv::Mat &leftFaceHSV,
                           std::vector<std::vector<RubikFacelet>> &rightFacelets, cv::Mat &rightFaceHSV,
-                          const uint8_t * data);
-
-        /**
-         * Applies the colors in the color array, to the facelets in the facelets array.
-         *
-         * @param [in/out] facelets that will be updated with correct color
-         * @param colors the detected facelets color.
-         */
-        void applyColorsToResult(std::vector<std::vector<RubikFacelet>> &facelets,
-                                 const std::vector<std::vector<RubikFacelet::Color>> colors);
-
-        /**
-         * Upscales the detected facelets positions to match the resolution of the desired output frame.
-         *
-         * This is necessary because processing is typically performed at resolutions lower that the desired output resolution,
-         * for performance  considerations. Give this, the result is not usable, without first upscaling it to the desired
-         * resolution.
-         *
-         * @param facelets 3x3 std::vector of detected RubikFacelet objects, to be upscaled
-         */
-        void upscaleResult(std::vector<std::vector<RubikFacelet>> &facelets);
+                          const uint8_t *data);
 
         void applyScanPhase(const bool &isSecondPhase);
 
-        /**
-         * Applies updated ImageProperties to this processor. This promts the RubikProcessor to recompute its memory requirements,
-         * scaling factors, processing size, and others.
-         *
-         * @param properties updated ImageProperties
-         */
-        void applyImageProperties(const ImageProperties &properties);
+        void applyScanProperties(const ImageProperties &properties);
 
+        void applyPhotoProperties(const ImageProperties &properties);
 
         static constexpr int DEFAULT_DIMENSION = 480;
 
         static constexpr int DEFAULT_FACE_DIMENSION = 360;
 
-        static constexpr int DEFAULT_FACELET_DIMENSION = 40;
+        static constexpr int DEFAULT_FACELET_DIMENSION = 15;
 
         static constexpr int NO_OFFSET = 0;
 
@@ -200,33 +154,32 @@ namespace rbdt {
          */
         std::shared_ptr<ImageSaver> imageSaver;
 
-        /**
-         * used to compute the processing frame rate
-         */
+
         int frameNumber = 0;
 
-        /**
-         * used to compute the processing frame rate
-         */
         int frameRateSum = 0;
 
         bool isSecondPhase = false;
 
-        int originalWidth;
+        int scanWidth;
 
-        int originalHeight;
+        int photoWidth;
 
-        int frameDimension;
+        int scanHeight;
 
-        /**
-         * region used to make square center crop
-         */
-        cv::Rect croppingRegion;
+        int photoHeight;
 
-        /**
-         * input frame rotation in degrees
-         */
-        int rotation;
+        int scanDimension;
+
+        int photoDimension;
+
+        cv::Rect scanCroppingRegion;
+
+        cv::Rect photoCroppingRegion;
+
+        int scanRotation;
+
+        int photoRotation;
 
         /**
          * total required length in bytes of the input array passed to RubikProcessor::process()
@@ -255,41 +208,29 @@ namespace rbdt {
          */
         int frameYUVByteCount;
 
-        /**
-         * ratio used to upscale the detected facelets to the resolution of the output frame
-         */
-        float upscalingRatio;
+        float scanUpscalingRatio;
 
-        /**
-         * ratio used to downscale the input frame to a size fit for processing
-         */
-        float scalingRatio;
+        float photoUpscalingRatio;
 
-        /**
-         * true if the given input frame is not square
-         */
-        bool needsCrop;
+        float scanScalingRatio;
 
-        /**
-         * true if the given input frame is too large, and should be downscaled to a lower resolution,
-         * with lower impact on processing (i.e. the "processing size")
-         */
-        bool needsResize;
+        float photoScalingRatio;
 
-        /**
-         * the offset in the input array where the processing frame (GRAYSCALE) will be saved while processing
-         */
+        bool scanNeedsCrop;
+
+        bool photoNeedsCrop;
+
+        bool scanNeedsResize;
+
+        bool photoNeedsResize;
+
         int firstFaceGrayOffset;
 
-        int firstFaceletHSVOffset;
+        int firstFaceletOffset;
 
-        /**
-         * the size in bytes of the GRAYSCALE processing frame
-         */
         int faceGrayByteCount;
 
-        int faceletHSVByteCount;
-
+        int faceletByteCount;
     };
 
 } //namespace rbdt
