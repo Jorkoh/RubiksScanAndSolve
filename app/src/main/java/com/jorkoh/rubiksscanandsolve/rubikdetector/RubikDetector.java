@@ -5,8 +5,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.Point2d;
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.RubikFacelet;
+import com.jorkoh.rubiksscanandsolve.rubikdetector.model.CubeState;
 
 import java.nio.ByteBuffer;
 
@@ -53,7 +52,7 @@ public class RubikDetector {
         this(scanProperties, photoProperties, null);
     }
 
-    private RubikDetector(@NonNull ImageProperties scanProperties, @NonNull ImageProperties photoProperties,@Nullable String storagePath) {
+    private RubikDetector(@NonNull ImageProperties scanProperties, @NonNull ImageProperties photoProperties, @Nullable String storagePath) {
         this.nativeProcessorRef = createNativeDetector(scanProperties, photoProperties, storagePath);
         this.scanWidth = scanProperties.width;
         this.scanHeight = scanProperties.height;
@@ -114,14 +113,14 @@ public class RubikDetector {
         return false;
     }
 
-    public String analyzeColors(@NonNull ByteBuffer imageDataBuffer) {
+    public CubeState analyzeColors(@NonNull ByteBuffer imageDataBuffer) {
         if (!imageDataBuffer.isDirect()) {
             throw new IllegalArgumentException("The image data buffer needs to be a direct buffer.");
         }
         if (isActive() && imageDataBuffer.capacity() >= requiredMemoryColors) {
-            return nativeAnalyzeColorsDataBuffer(nativeProcessorRef, imageDataBuffer);
+            return decodeResult(nativeAnalyzeColorsDataBuffer(nativeProcessorRef, imageDataBuffer));
         }
-        return "";
+        return null;
     }
 
     public boolean isActive() {
@@ -233,20 +232,15 @@ public class RubikDetector {
     }
 
     @Nullable
-    private RubikFacelet[][] decodeResult(int[] detectionResult) {
+    private CubeState decodeResult(int[] detectionResult) {
         if (detectionResult == null) {
             return null;
         }
 
-        RubikFacelet[][] result = new RubikFacelet[3][3];
-        for (int i = 0; i < detectionResult.length; i += DATA_SIZE) {
-            result[i / (3 * DATA_SIZE)][(i % (3 * DATA_SIZE)) / DATA_SIZE] = new RubikFacelet(
-                    detectionResult[i],
-                    new Point2d(detectionResult[i + 1] / 100000f, detectionResult[i + 2] / 100000f),
-                    detectionResult[i + 3] / 100000f,
-                    detectionResult[i + 4] / 100000f,
-                    detectionResult[i + 5] / 100000f
-            );
+        CubeState result = new CubeState();
+        CubeState.Face[] values = CubeState.Face.values();
+        for (int i = 0; i < detectionResult.length; i++) {
+            result.facelets[i] = values[detectionResult[i]];
         }
         return result;
     }
@@ -273,7 +267,7 @@ public class RubikDetector {
 
     private native boolean nativeExtractFaceletsDataBuffer(long nativeProcessorRef, ByteBuffer scanDataBuffer, byte[] photoData);
 
-    private native String nativeAnalyzeColorsDataBuffer(long nativeProcessorRef, ByteBuffer imageDataBuffer);
+    private native int[] nativeAnalyzeColorsDataBuffer(long nativeProcessorRef, ByteBuffer imageDataBuffer);
 
     private native void nativeReleaseCubeDetector(long nativeProcessorRef);
 

@@ -16,7 +16,6 @@ namespace rbdt {
             mPhotoRotation(DEFAULT_PHOTO_ROTATION),
             mPhotoWidth(DEFAULT_PHOTO_WIDTH),
             mPhotoHeight(DEFAULT_PHOTO_HEIGHT),
-            mDrawConfig(DrawConfig::Default()),
             mFaceletsDetector(nullptr),
             mColorDetector(nullptr),
             mImageSaver(nullptr) {}
@@ -40,11 +39,6 @@ namespace rbdt {
     RubikProcessorBuilder &RubikProcessorBuilder::photoSize(int width, int height) {
         mPhotoWidth = width;
         mPhotoHeight = height;
-        return *this;
-    }
-
-    RubikProcessorBuilder &RubikProcessorBuilder::drawConfig(DrawConfig drawConfig) {
-        mDrawConfig = drawConfig;
         return *this;
     }
 
@@ -79,15 +73,11 @@ namespace rbdt {
                     new HistogramColorDetector(mImageSaver));
         }
 
-        std::unique_ptr<FaceletsDrawController> faceletsDrawController(
-                new FaceletsDrawController(mDrawConfig));
-
         RubikProcessor *rubikDetector = new RubikProcessor(
                 ImageProperties(mScanRotation, mScanWidth, mScanHeight),
                 ImageProperties(mPhotoRotation, mPhotoWidth, mPhotoHeight),
                 std::move(mFaceletsDetector),
                 std::move(mColorDetector),
-                std::move(faceletsDrawController),
                 mImageSaver);
 
         return rubikDetector;

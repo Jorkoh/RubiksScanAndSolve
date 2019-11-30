@@ -9,6 +9,7 @@
           <set>
             <option value="$PROJECT_DIR$/../OpenCV_4.1.2/sdk" />
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/animcubeandroid" />
             <option value="$PROJECT_DIR$/app" />
           </set>
         </option>

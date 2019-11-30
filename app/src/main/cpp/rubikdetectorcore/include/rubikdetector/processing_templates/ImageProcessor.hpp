@@ -5,6 +5,8 @@
 #ifndef RUBIKDETECTOR_IMAGEPROCESSOR_HPP
 #define RUBIKDETECTOR_IMAGEPROCESSOR_HPP
 
+#include "../data/processing/CubeState.h"
+
 namespace rbdt {
 
 /**
@@ -46,7 +48,7 @@ namespace rbdt {
 
         virtual bool processPhoto(INPUT_TYPE scanFrame, INPUT_TYPE scanPhoto) = 0;
 
-        virtual std::string processColors(INPUT_TYPE inputFrame) = 0;
+        virtual rbdt::CubeState processColors(INPUT_TYPE inputFrame) = 0;
 
         virtual void updateScanPhase(const bool &isSecondPhase) = 0;
 

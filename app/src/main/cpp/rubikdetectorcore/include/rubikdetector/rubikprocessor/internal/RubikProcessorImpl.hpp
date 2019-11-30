@@ -12,10 +12,9 @@
 #include "../../data/geometry/internal/Circle.hpp"
 #include "../../data/processing/internal/HueColorEvidence.hpp"
 #include "../../imagesaver/ImageSaver.hpp"
-#include "../../data/config/DrawConfig.hpp"
-#include "../../drawing/FaceletsDrawController.hpp"
 #include "../../rubikprocessor/RubikProcessor.hpp"
 #include "../../data/config/ImageProperties.hpp"
+#include "../../data/processing/CubeState.h"
 #include <iostream>
 #include <memory>
 
@@ -71,7 +70,7 @@ namespace rbdt {
 
         bool processPhoto(const uint8_t *scanData, const uint8_t *photoData) override;
 
-        std::string processColors(const uint8_t *imageData) override;
+        CubeState processColors(const uint8_t *imageData) override;
 
         void updateScanPhase(const bool &isSecondPhase) override;
 
@@ -87,8 +86,6 @@ namespace rbdt {
 
         int getFrameYUVBufferOffset() override;
 
-        void updateDrawConfig(DrawConfig drawConfig);
-
     private:
         friend class RubikProcessor;
 
@@ -96,14 +93,13 @@ namespace rbdt {
                            const ImageProperties photoProperties,
                            std::unique_ptr<RubikFaceletsDetector> faceletsDetector,
                            std::unique_ptr<RubikColorDetector> colorDetector,
-                           std::unique_ptr<FaceletsDrawController> faceletsDrawController,
                            std::shared_ptr<ImageSaver> imageSaver);
 
         bool scanCubeInternal(const uint8_t *scanData);
 
         bool extractFaceletsInternal(const uint8_t *scanData, const uint8_t *photoData);
 
-        std::string analyzeColorsInternal(const uint8_t *data);
+        CubeState analyzeColorsInternal(const uint8_t *data);
 
         void rotateMat(cv::Mat &matImage, int rotFlag);
 
@@ -134,24 +130,10 @@ namespace rbdt {
 
         static constexpr int NO_OFFSET = 0;
 
-        /**
-         * Detector used to search for facelets within the frame
-         */
         std::unique_ptr<RubikFaceletsDetector> faceletsDetector;
 
-        /**
-         * Detector used to extract facelet colors from the frame, once found
-         */
         std::unique_ptr<RubikColorDetector> colorDetector;
 
-        /**
-         * Component used to draw the facelets on the output frame, if required
-         */
-        std::unique_ptr<FaceletsDrawController> faceletsDrawController;
-
-        /**
-         * Used to save debugging frames, if present and this RubikProcessor is is debuggable mode.
-         */
         std::shared_ptr<ImageSaver> imageSaver;
 
 

@@ -13,14 +13,12 @@ namespace rbdt {
                                    const ImageProperties photoProperties,
                                    std::unique_ptr<RubikFaceletsDetector> faceletsDetector,
                                    std::unique_ptr<RubikColorDetector> colorDetector,
-                                   std::unique_ptr<FaceletsDrawController> faceletsDrawController,
                                    std::shared_ptr<ImageSaver> imageSaver)
             : behavior(std::unique_ptr<RubikProcessorImpl>(
             new RubikProcessorImpl(scanProperties,
                                    photoProperties,
                                    std::move(faceletsDetector),
                                    std::move(colorDetector),
-                                   std::move(faceletsDrawController),
                                    imageSaver))) {}
 
     RubikProcessor::~RubikProcessor() {
@@ -35,7 +33,7 @@ namespace rbdt {
         return behavior->processPhoto(scanData, photoData);
     }
 
-    std::string RubikProcessor::processColors(const uint8_t *imageData) {
+    CubeState RubikProcessor::processColors(const uint8_t *imageData) {
         return behavior->processColors(imageData);
     }
 
@@ -65,9 +63,5 @@ namespace rbdt {
 
     int RubikProcessor::getFrameYUVBufferOffset() {
         return behavior->getFrameYUVBufferOffset();
-    }
-
-    void RubikProcessor::updateDrawConfig(DrawConfig drawConfig) {
-        behavior->updateDrawConfig(drawConfig);
     }
 } //end namespace rbdt

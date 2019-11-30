@@ -7,6 +7,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.jorkoh.rubiksscanandsolve.rubikdetector.RubikDetector
 import com.jorkoh.rubiksscanandsolve.rubikdetector.RubikDetectorUtils
+import com.jorkoh.rubiksscanandsolve.rubikdetector.model.CubeState
+import com.jorkoh.rubiksscanandsolve.rubikdetector.model.toSolverScramble
 import com.jorkoh.rubiksscanandsolve.rubiksolver.Search
 import com.jorkoh.rubiksscanandsolve.scan.ScanViewModel.ScanStages.*
 import java.nio.ByteBuffer
@@ -27,9 +29,9 @@ class ScanViewModel : ViewModel() {
         get() = _scanStage
     private val _scanStage = MutableLiveData<ScanStages>(PRE_FIRST_SCAN)
 
-    val scanResult: LiveData<String>
+    val scanResult: LiveData<CubeState>
         get() = _scanResult
-    private val _scanResult = MutableLiveData<String>("Not scanned yet")
+    private val _scanResult = MutableLiveData<CubeState>()
 
     val flashEnabled: LiveData<Boolean>
         get() = _flashEnabled
@@ -91,9 +93,7 @@ class ScanViewModel : ViewModel() {
                     _scanStage.postValue(PRE_SECOND_SCAN)
                 }
                 SECOND_PHOTO -> {
-                    val scramble = rubikDetector.analyzeColors(scanDataBuffer)
-                    val solution = Search().solution(scramble, 21, 100000000, 0, 0)
-                    _scanResult.postValue("$scramble\n $solution")
+                    _scanResult.postValue(rubikDetector.analyzeColors(scanDataBuffer))
                     _scanStage.postValue(DONE)
                 }
                 else -> {

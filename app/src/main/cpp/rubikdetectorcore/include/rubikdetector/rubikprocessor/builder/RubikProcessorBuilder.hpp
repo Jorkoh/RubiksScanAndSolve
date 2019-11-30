@@ -12,7 +12,6 @@
 #include "../../detectors/faceletsdetector/RubikFaceletsDetector.hpp"
 #include "../../imagesaver/ImageSaver.hpp"
 #include "../RubikProcessor.hpp"
-#include "../../data/config/DrawConfig.hpp"
 
 namespace rbdt {
 /**
@@ -59,17 +58,6 @@ namespace rbdt {
         RubikProcessorBuilder &scanSize(int width, int height);
 
         RubikProcessorBuilder &photoSize(int width, int height);
-
-        /**
-         * Specifies the DrawConfig. Drawing only occurs when the facelets are found. If you wish to not draw even
-         * if the facelets are found, use DrawConfig::DoNotDraw();
-         *
-         * This can later be changed through RubikProcessor::updateDrawConfig().
-         *
-         * @param [in] drawConfig the desired DrawConfig
-         * @return the same RubikProcessorBuilder instance
-         */
-        RubikProcessorBuilder &drawConfig(DrawConfig drawConfig);
 
         /**
          * Specifies the RubikColorDetector used by the RubikProcessor when detecting color.
@@ -135,8 +123,6 @@ namespace rbdt {
         int mScanHeight;
 
         int mPhotoHeight;
-
-        DrawConfig mDrawConfig;
 
         std::unique_ptr<RubikColorDetector> mColorDetector;
 

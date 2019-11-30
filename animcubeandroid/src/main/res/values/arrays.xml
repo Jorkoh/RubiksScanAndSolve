@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="cube_default_colors">
+        <item>#ffffff</item>//White
+        <item>#009000</item>//Green
+        <item>#d00000</item>//Red
+        <item>#ffff00</item>//Yellow
+        <item>#ff6020</item>//Orange
+        <item>#2040d0</item>//Blue
+    </array>
+</resources>

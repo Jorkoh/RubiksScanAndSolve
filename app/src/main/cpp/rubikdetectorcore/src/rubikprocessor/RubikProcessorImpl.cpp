@@ -19,11 +19,9 @@ namespace rbdt {
                                            const ImageProperties photoProperties,
                                            std::unique_ptr<RubikFaceletsDetector> faceletsDetector,
                                            std::unique_ptr<RubikColorDetector> colorDetector,
-                                           std::unique_ptr<FaceletsDrawController> faceletsDrawController,
                                            std::shared_ptr<ImageSaver> imageSaver) :
             faceletsDetector(std::move(faceletsDetector)),
             colorDetector(std::move(colorDetector)),
-            faceletsDrawController(std::move(faceletsDrawController)),
             imageSaver(imageSaver) {
         applyScanProperties(scanProperties);
         applyPhotoProperties(photoProperties);
@@ -41,7 +39,7 @@ namespace rbdt {
         return extractFaceletsInternal(scanData, photoData);
     }
 
-    std::string RubikProcessorImpl::processColors(const uint8_t *imageData) {
+    CubeState RubikProcessorImpl::processColors(const uint8_t *imageData) {
         return analyzeColorsInternal(imageData);
     }
 
@@ -73,9 +71,6 @@ namespace rbdt {
         return frameYUVOffset;
     }
 
-    void RubikProcessorImpl::updateDrawConfig(DrawConfig drawConfig) {
-        faceletsDrawController->updateDrawConfig(drawConfig);
-    }
 /**##### END PUBLIC API #####**/
 /**##### PRIVATE MEMBERS FROM HERE #####**/
 
@@ -499,7 +494,7 @@ namespace rbdt {
         return i[5] < j[5];
     }
 
-    std::string RubikProcessorImpl::analyzeColorsInternal(const uint8_t *data) {
+    CubeState RubikProcessorImpl::analyzeColorsInternal(const uint8_t *data) {
         int processedFacelets = 0;
         for (int i = 0; i < 54; i++) {
             cv::Mat facelet(DEFAULT_FACELET_DIMENSION, DEFAULT_FACELET_DIMENSION, CV_8UC3,
@@ -507,7 +502,6 @@ namespace rbdt {
             imageSaver->saveImage(facelet, i + 1, "");
             processedFacelets++;
         }
-
         /// Finished saving for debug
 
         /*
@@ -721,32 +715,25 @@ namespace rbdt {
                       centers[labels[i]][0], centers[labels[i]][1], centers[labels[i]][2]);
         }
 
-        std::string result = "";
-        for (int i = 0; i < 54; i++) {
-            int order[54] = {0, 1, 2, 3, 4, 5, 6, 7, 8,
-                             18, 19, 20, 21, 22, 23, 24, 25, 26,
-                             9, 10, 11, 12, 13, 14, 15, 16, 17,
-                             33, 30, 27, 34, 31, 28, 35, 32, 29,
-                             44, 43, 42, 41, 40, 39, 38, 37, 36,
-                             53, 52, 51, 50, 49, 48, 47, 46, 45};
-            int currentLabel = labels[order[i]];
 
-            if (currentLabel == upLabel) {
-                result += "U";
-            } else if (currentLabel == frontLabel) {
-                result += "F";
-            } else if (currentLabel == rightLabel) {
-                result += "R";
-            } else if (currentLabel == downLabel) {
-                result += "D";
-            } else if (currentLabel == leftLabel) {
-                result += "L";
-            } else if (currentLabel == backLabel) {
-                result += "B";
+        std::vector<CubeState::Face> facelets(0);
+        for (int i = 0; i < 54; i++) {
+            if (labels[i] == upLabel) {
+                facelets.emplace_back(CubeState::Face::UP);
+            } else if (labels[i] == frontLabel) {
+                facelets.emplace_back(CubeState::Face::FRONT);
+            } else if (labels[i] == rightLabel) {
+                facelets.emplace_back(CubeState::Face::RIGHT);
+            } else if (labels[i] == downLabel) {
+                facelets.emplace_back(CubeState::Face::DOWN);
+            } else if (labels[i] == leftLabel) {
+                facelets.emplace_back(CubeState::Face::LEFT);
+            } else if (labels[i] == backLabel) {
+                facelets.emplace_back(CubeState::Face::BACK);
             }
         }
 
-        return result;
+        return CubeState(facelets);
         /**/
     }
 } //namespace rbdt

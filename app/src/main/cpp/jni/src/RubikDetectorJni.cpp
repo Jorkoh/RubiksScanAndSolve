@@ -119,7 +119,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeExtractFace
     }
 }
 
-JNIEXPORT jstring JNICALL
+JNIEXPORT jintArray JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeAnalyzeColorsDataBuffer(JNIEnv *env,
                                                                                              jobject instance,
                                                                                              jlong cubeDetectorHandle,
@@ -129,11 +129,11 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeAnalyzeColo
     void *ptr = env->GetDirectBufferAddress(imageDataDirectBuffer);
     if (ptr) {
         uint8_t *ptrAsInt = reinterpret_cast<uint8_t *>(ptr);
-        return (env)->NewStringUTF(cubeDetector.processColors(ptrAsInt).c_str());
+        return processResult(cubeDetector.processColors(ptrAsInt), env);
     } else {
         LOG_WARN("RUBIK_JNI_PART.cpp",
                  "Could not obtain image byte array. No color processing performed.");
-        return (env)->NewStringUTF("");
+        return NULL;
     }
 }
 
@@ -156,20 +156,6 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetScanProp
     rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
     cubeDetector.updateImageProperties(rbdt::ImageProperties((int) rotation, (int) width, (int) height));
 }
-
-JNIEXPORT void JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetDrawConfig(JNIEnv *env,
-                                                                                   jobject instance,
-                                                                                   jlong cubeDetectorHandle,
-                                                                                   jint drawMode,
-                                                                                   jint strokeWidth,
-                                                                                   jboolean fillShape) {
-    rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
-    cubeDetector.updateDrawConfig(rbdt::DrawConfig(rbdt_jni::drawModeFromInt((int) drawMode),
-                                                   (int) strokeWidth,
-                                                   (bool) fillShape));
-}
-
 JNIEXPORT jint JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetRequiredMemory(JNIEnv *env,
                                                                                        jobject instance,
@@ -214,20 +200,13 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetInputIma
 }
 #endif
 
-jintArray processResult(const std::vector<std::vector<rbdt::RubikFacelet>> &result, _JNIEnv *env) {
-    if (result.size() != 0) {
-        size_t data_size = 9 * 6;
+jintArray processResult(const rbdt::CubeState &result, _JNIEnv *env) {
+    if (!result.facelets.empty()) {
+        size_t data_size = 54;
         jint flattenedResult[data_size];
         jint *currentPos = flattenedResult;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                *(currentPos++) = rbdt::asInt(result[i][j].color);
-                *(currentPos++) = (int) (result[i][j].center.x * 100000);
-                *(currentPos++) = (int) (result[i][j].center.y * 100000);
-                *(currentPos++) = (int) (result[i][j].width * 100000);
-                *(currentPos++) = (int) (result[i][j].height * 100000);
-                *(currentPos++) = (int) (result[i][j].angle * 100000);
-            }
+        for (int i = 0; i < 54; i++) {
+            *(currentPos++) = rbdt::asInt(result.facelets[i]);
         }
 
         jintArray retArray = env->NewIntArray(data_size);

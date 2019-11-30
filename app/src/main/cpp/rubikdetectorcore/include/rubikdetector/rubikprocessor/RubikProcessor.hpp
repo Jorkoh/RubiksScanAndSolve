@@ -12,8 +12,6 @@
 #include "../processing_templates/ImageProcessor.hpp"
 #include "../detectors/colordetector/RubikColorDetector.hpp"
 #include "../detectors/faceletsdetector/RubikFaceletsDetector.hpp"
-#include "../data/config/DrawConfig.hpp"
-#include "../drawing/FaceletsDrawController.hpp"
 
 namespace rbdt {
 
@@ -79,7 +77,7 @@ public:
 
     bool processPhoto(const uint8_t *scanData, const uint8_t *photoData) override;
 
-    std::string processColors(const uint8_t *imageData) override;
+    CubeState processColors(const uint8_t *imageData) override;
 
     void updateScanPhase(const bool &isSecondPhase) override;
 
@@ -95,13 +93,6 @@ public:
 
     int getFrameYUVBufferOffset() override;
 
-    /**
-     * Updates the DrawConfig of this RubikProcessor.
-     *
-     * @param drawConfig the updated DrawConfig
-     */
-    void updateDrawConfig(DrawConfig drawConfig);
-
 private:
     friend class RubikProcessorBuilder;
 
@@ -109,7 +100,6 @@ private:
                    const ImageProperties photoProperties,
                    std::unique_ptr<RubikFaceletsDetector> faceletsDetector,
                    std::unique_ptr<RubikColorDetector> colorDetector,
-                   std::unique_ptr<FaceletsDrawController> drawController,
                    std::shared_ptr<ImageSaver> imageSaver);
 
     /**

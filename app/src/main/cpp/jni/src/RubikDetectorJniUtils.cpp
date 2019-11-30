@@ -24,17 +24,4 @@ rbdt::RubikFacelet::Color colorFromInt(const int val) {
             return rbdt::RubikFacelet::Color::WHITE;
     }
 }
-
-rbdt::DrawConfig::DrawMode drawModeFromInt(const int val) {
-    switch (val) {
-        case JNI_DRAW_MODE_DO_NOT_DRAW:
-            return rbdt::DrawConfig::DrawMode::DO_NOT_DRAW;
-        case JNI_DRAW_MODE_DRAW_RECTANGLES:
-            return rbdt::DrawConfig::DrawMode::DRAW_RECTANGLES;
-        case JNI_DRAW_MODE_DRAW_CIRCLES:
-            return rbdt::DrawConfig::DrawMode::DRAW_CIRCLES;
-        default:
-            return rbdt::DrawConfig::DrawMode::DRAW_CIRCLES;
-    }
-}
 } //namespace rbdt

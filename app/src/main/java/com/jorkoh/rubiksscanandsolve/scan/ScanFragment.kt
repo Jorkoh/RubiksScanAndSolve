@@ -8,7 +8,6 @@ import android.graphics.ImageFormat
 import android.graphics.PorterDuff
 import android.hardware.display.DisplayManager
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,11 +17,15 @@ import androidx.camera.core.*
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.navigation.fragment.findNavController
 import com.jorkoh.rubiksscanandsolve.R
+import com.jorkoh.rubiksscanandsolve.rubikdetector.model.CubeState
+import com.jorkoh.rubiksscanandsolve.rubikdetector.model.toSolverScramble
+import com.jorkoh.rubiksscanandsolve.rubikdetector.model.toVisualizerState
+import com.jorkoh.rubiksscanandsolve.rubiksolver.Search
 import com.jorkoh.rubiksscanandsolve.scan.ScanViewModel.ScanStages.*
 import com.jorkoh.rubiksscanandsolve.scan.utils.AutoFitPreviewBuilder
 import kotlinx.android.synthetic.main.fragment_scan.*
-import kotlinx.android.synthetic.main.fragment_scan.view.*
 import permissions.dispatcher.*
 import java.util.concurrent.Executors
 
@@ -61,18 +64,18 @@ class ScanFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_scan, container, false).apply {
-            button_scan.setOnClickListener {
-                scanVM.startStopScanning()
-            }
-            button_switch_flash.setOnClickListener {
-                scanVM.switchFlash()
-            }
-        }
+        return inflater.inflate(R.layout.fragment_scan, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        button_scan.setOnClickListener {
+            scanVM.startStopScanning()
+        }
+        button_switch_flash.setOnClickListener {
+            scanVM.switchFlash()
+        }
 
         displayManager = view_finder.context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
         displayManager.registerDisplayListener(displayListener, null)
@@ -147,7 +150,14 @@ class ScanFragment : Fragment() {
             }
         })
         scanVM.scanResult.observe(viewLifecycleOwner, Observer { scanResult ->
-            text_view_scan_result.text = scanResult
+            //TODO Calculation of the search has to be done in a coroutine
+            //TODO Probably should check that the state has a solution before this
+            findNavController().navigate(
+                ScanFragmentDirections.actionScanFragmentToSolveFragment(
+                    scanResult.toVisualizerState(),
+                    Search().solution(scanResult.toSolverScramble(), 21, 100000000, 0, 0)
+                )
+            )
         })
         scanVM.flashEnabled.observe(viewLifecycleOwner, Observer { flashEnabled ->
             preview?.enableTorch(flashEnabled)

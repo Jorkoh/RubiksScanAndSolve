@@ -4,6 +4,7 @@
 #include <jni.h>
 #include <cstdlib>
 #include "../../rubikdetectorcore/include/rubikdetector/data/processing/RubikFacelet.hpp"
+#include "../../rubikdetectorcore/include/rubikdetector/data/processing/CubeState.h"
 
 #ifndef RUBIKDETECTORJNI_RUBIKDETECTORJNI_HPP
 #define RUBIKDETECTORJNI_RUBIKDETECTORJNI_HPP
@@ -55,7 +56,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeExtractFace
                                                                                                jobject scanDataDirectBuffer,
                                                                                                jbyteArray photoData);
 
-JNIEXPORT jstring JNICALL
+JNIEXPORT jintArray JNICALL
 Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeAnalyzeColorsDataBuffer(JNIEnv *env,
                                                                                              jobject instance,
                                                                                              jlong cubeDetectorHandle,
@@ -112,6 +113,6 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetInputIma
 }
 #endif
 
-jintArray processResult(const std::vector<std::vector<rbdt::RubikFacelet>> &result, _JNIEnv *env);
+jintArray processResult(const rbdt::CubeState &result, _JNIEnv *env);
 
 #endif //RUBIKDETECTORJNI_RUBIKDETECTORJNI_HPP

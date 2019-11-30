@@ -9,5 +9,20 @@
         android:id="@+id/scanFragment"
         android:name="com.jorkoh.rubiksscanandsolve.scan.ScanFragment"
         android:label="fragment_scan"
-        tools:layout="@layout/fragment_scan" />
+        tools:layout="@layout/fragment_scan" >
+        <action
+            android:id="@+id/action_scanFragment_to_solveFragment"
+            app:destination="@id/solveFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/solveFragment"
+        android:name="com.jorkoh.rubiksscanandsolve.solve.SolveFragment"
+        android:label="SolveFragment" >
+        <argument
+            android:name="initialState"
+            app:argType="string" />
+        <argument
+            android:name="solution"
+            app:argType="string" />
+    </fragment>
 </navigation>
