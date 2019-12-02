@@ -663,10 +663,10 @@ namespace rbdt {
             cv::Mat facelet(DEFAULT_FACELET_DIMENSION, DEFAULT_FACELET_DIMENSION, CV_8UC3,
                             (uchar *) data + firstFaceletOffset + (i * faceletByteCount));
 
-            cv::Mat faceletDouble;
-            facelet.convertTo(faceletDouble, CV_32F);
+            cv::Mat faceletLab;
+            cv::cvtColor(facelet, faceletLab, cv::COLOR_BGR2Lab);
             std::vector<cv::Mat> labChannels(3);
-            cv::split(faceletDouble, labChannels);
+            cv::split(faceletLab, labChannels);
             meanValues.emplace_back(cv::Scalar_<float>(
                     static_cast<float>(cv::mean(labChannels[0])[0]),
                     static_cast<float>(cv::mean(labChannels[1])[0]),
@@ -732,8 +732,15 @@ namespace rbdt {
                 facelets.emplace_back(CubeState::Face::BACK);
             }
         }
+        std::vector<cv::Scalar> colors(0);
+        colors.emplace_back(centers[upLabel]);
+        colors.emplace_back(centers[frontLabel]);
+        colors.emplace_back(centers[rightLabel]);
+        colors.emplace_back(centers[downLabel]);
+        colors.emplace_back(centers[leftLabel]);
+        colors.emplace_back(centers[backLabel]);
 
-        return CubeState(facelets);
+        return CubeState(facelets, colors);
         /**/
     }
 } //namespace rbdt

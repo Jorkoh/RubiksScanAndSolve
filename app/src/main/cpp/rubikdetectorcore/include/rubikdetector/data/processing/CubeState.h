@@ -7,6 +7,7 @@
 
 
 #include <vector>
+#include <opencv2/core/types.hpp>
 
 namespace rbdt {
 
@@ -19,11 +20,13 @@ namespace rbdt {
 
         CubeState();
 
-        CubeState(std::vector<Face> facelets);
+        CubeState(std::vector<Face> facelets, std::vector<cv::Scalar> colors);
 
         ~CubeState();
 
         std::vector<Face> facelets;
+
+        std::vector<cv::Scalar> colors;
     };
 
 } //end namespace rbdt

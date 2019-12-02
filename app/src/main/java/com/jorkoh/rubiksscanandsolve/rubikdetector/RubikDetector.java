@@ -4,6 +4,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.ColorUtils;
 
 import com.jorkoh.rubiksscanandsolve.rubikdetector.model.CubeState;
 
@@ -239,8 +240,16 @@ public class RubikDetector {
 
         CubeState result = new CubeState();
         CubeState.Face[] values = CubeState.Face.values();
-        for (int i = 0; i < detectionResult.length; i++) {
+        for (int i = 0; i < 54; i++) {
             result.facelets[i] = values[detectionResult[i]];
+        }
+        for (int i = 0; i < 6; i++) {
+            result.colors[i] = ColorUtils.LABToColor(
+                    ((detectionResult[54 + i * 3] / 10000f) / 255f) * 100f,
+                    detectionResult[54 + i * 3 + 1] / 10000f - 128,
+                    detectionResult[54 + i * 3 + 2] / 10000f - 128
+            );
+            Log.d("TESTING", "Color #" + i + " has HEX: " + Integer.toHexString(result.colors[i]));
         }
         return result;
     }

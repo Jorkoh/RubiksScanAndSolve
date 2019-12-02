@@ -201,12 +201,19 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetInputIma
 #endif
 
 jintArray processResult(const rbdt::CubeState &result, _JNIEnv *env) {
-    if (!result.facelets.empty()) {
-        size_t data_size = 54;
+    if (!result.facelets.empty() && !result.colors.empty()) {
+        size_t data_size = 54 + 6*3;
         jint flattenedResult[data_size];
         jint *currentPos = flattenedResult;
+        // facelets face
         for (int i = 0; i < 54; i++) {
             *(currentPos++) = rbdt::asInt(result.facelets[i]);
+        }
+        // colors
+        for (int i = 0; i < 6; i++) {
+            *(currentPos++) = (int) (result.colors[i][0] * 10000);
+            *(currentPos++) = (int) (result.colors[i][1] * 10000);
+            *(currentPos++) = (int) (result.colors[i][2] * 10000);
         }
 
         jintArray retArray = env->NewIntArray(data_size);

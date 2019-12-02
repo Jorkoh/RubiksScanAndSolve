@@ -19,10 +19,7 @@
         android:name="com.jorkoh.rubiksscanandsolve.solve.SolveFragment"
         android:label="SolveFragment" >
         <argument
-            android:name="initialState"
-            app:argType="string" />
-        <argument
-            android:name="solution"
-            app:argType="string" />
+            android:name="cubeState"
+            app:argType="com.jorkoh.rubiksscanandsolve.rubikdetector.model.CubeState" />
     </fragment>
 </navigation>

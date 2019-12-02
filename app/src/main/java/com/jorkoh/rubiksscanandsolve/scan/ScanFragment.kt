@@ -19,10 +19,6 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.findNavController
 import com.jorkoh.rubiksscanandsolve.R
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.CubeState
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.toSolverScramble
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.toVisualizerState
-import com.jorkoh.rubiksscanandsolve.rubiksolver.Search
 import com.jorkoh.rubiksscanandsolve.scan.ScanViewModel.ScanStages.*
 import com.jorkoh.rubiksscanandsolve.scan.utils.AutoFitPreviewBuilder
 import kotlinx.android.synthetic.main.fragment_scan.*
@@ -150,13 +146,8 @@ class ScanFragment : Fragment() {
             }
         })
         scanVM.scanResult.observe(viewLifecycleOwner, Observer { scanResult ->
-            //TODO Calculation of the search has to be done in a coroutine
-            //TODO Probably should check that the state has a solution before this
             findNavController().navigate(
-                ScanFragmentDirections.actionScanFragmentToSolveFragment(
-                    scanResult.toVisualizerState(),
-                    Search().solution(scanResult.toSolverScramble(), 21, 100000000, 0, 0)
-                )
+                ScanFragmentDirections.actionScanFragmentToSolveFragment(scanResult)
             )
         })
         scanVM.flashEnabled.observe(viewLifecycleOwner, Observer { flashEnabled ->

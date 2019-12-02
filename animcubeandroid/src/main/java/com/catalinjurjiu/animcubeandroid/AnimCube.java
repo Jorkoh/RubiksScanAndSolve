@@ -527,6 +527,10 @@ public class AnimCube extends SurfaceView implements View.OnTouchListener {
         move = getMove(moveSequence);
     }
 
+    public void setCubeColors(int[] newColors) {
+        System.arraycopy(newColors, 0, cubeColors, 0, 6);
+    }
+
     /**
      * <p>
      * Resets the cube to its initial state. This includes:
