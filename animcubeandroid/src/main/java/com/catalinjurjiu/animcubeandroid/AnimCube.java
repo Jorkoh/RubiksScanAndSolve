@@ -1475,7 +1475,7 @@ public class AnimCube extends SurfaceView implements View.OnTouchListener {
             CubeUtils.deepCopy2DArray(cube, cubeCopy);
         }
         if (cubeModelUpdatedListener != null) {
-            cubeModelUpdatedListener.onCubeModelUpdate(cubeCopy);
+            cubeModelUpdatedListener.onCubeModelUpdate(cubeCopy, movePos);
         }
     }
 
@@ -1925,7 +1925,7 @@ public class AnimCube extends SurfaceView implements View.OnTouchListener {
          * @see #setCubeModel(String)
          * @see #setCubeModel(int[][])
          */
-        void onCubeModelUpdate(int[][] newCubeModel);
+        void onCubeModelUpdate(int[][] newCubeModel, int movePos);
     }
 
     /**

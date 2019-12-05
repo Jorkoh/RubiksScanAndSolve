@@ -1,17 +1,15 @@
-package com.jorkoh.rubiksscanandsolve.rubikdetector;
+package com.jorkoh.rubiksscanandsolve.scan.rubikdetector;
 
 import android.graphics.Canvas;
-import android.graphics.ImageFormat;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.media.Image;
-import android.util.Log;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.Point2d;
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.RubikFacelet;
+import com.jorkoh.rubiksscanandsolve.scan.rubikdetector.model.Point2d;
+import com.jorkoh.rubiksscanandsolve.scan.rubikdetector.model.RubikFacelet;
 
 import java.nio.ByteBuffer;
 

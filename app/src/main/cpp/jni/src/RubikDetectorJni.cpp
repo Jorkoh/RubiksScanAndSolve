@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 JNIEXPORT jlong JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeCreateRubikDetector(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeCreateRubikDetector(JNIEnv *env,
                                                                                          jobject instance,
                                                                                          jint scanRotation,
                                                                                          jint scanWidth,
@@ -50,7 +50,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeCreateRubik
 }
 
 JNIEXPORT void JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeReleaseCubeDetector(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeReleaseCubeDetector(JNIEnv *env,
                                                                                          jobject instance,
                                                                                          jlong cubeDetectorHandle) {
 
@@ -60,7 +60,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeReleaseCube
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeScanCube(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeScanCube(JNIEnv *env,
                                                                               jobject instance,
                                                                               jlong cubeDetectorHandle,
                                                                               jbyteArray imageByteData) {
@@ -79,7 +79,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeScanCube(JN
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeScanCubeDataBuffer(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeScanCubeDataBuffer(JNIEnv *env,
                                                                                         jobject instance,
                                                                                         jlong cubeDetectorHandle,
                                                                                         jobject scanDataDirectBuffer) {
@@ -97,7 +97,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeScanCubeDat
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeExtractFaceletsDataBuffer(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeExtractFaceletsDataBuffer(JNIEnv *env,
                                                                                                jobject instance,
                                                                                                jlong cubeDetectorHandle,
                                                                                                jobject scanDataDirectBuffer,
@@ -120,7 +120,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeExtractFace
 }
 
 JNIEXPORT jintArray JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeAnalyzeColorsDataBuffer(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeAnalyzeColorsDataBuffer(JNIEnv *env,
                                                                                              jobject instance,
                                                                                              jlong cubeDetectorHandle,
                                                                                              jobject imageDataDirectBuffer) {
@@ -138,7 +138,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeAnalyzeColo
 }
 
 JNIEXPORT void JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetScanPhase(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeSetScanPhase(JNIEnv *env,
                                                                                   jobject instance,
                                                                                   jlong cubeDetectorHandle,
                                                                                   jboolean isSecondPhase) {
@@ -147,7 +147,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetScanPhas
 }
 
 JNIEXPORT void JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetScanProperties(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeSetScanProperties(JNIEnv *env,
                                                                                        jobject instance,
                                                                                        jlong cubeDetectorHandle,
                                                                                        jint rotation,
@@ -157,7 +157,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeSetScanProp
     cubeDetector.updateImageProperties(rbdt::ImageProperties((int) rotation, (int) width, (int) height));
 }
 JNIEXPORT jint JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetRequiredMemory(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeGetRequiredMemory(JNIEnv *env,
                                                                                        jobject instance,
                                                                                        jlong cubeDetectorHandle) {
     rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
@@ -165,7 +165,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetRequired
 }
 
 JNIEXPORT jint JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetResultImageOffset(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeGetResultImageOffset(JNIEnv *env,
                                                                                           jobject instance,
                                                                                           jlong cubeDetectorHandle) {
     rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
@@ -173,7 +173,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetResultIm
 }
 
 JNIEXPORT jint JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetResultImageSize(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeGetResultImageSize(JNIEnv *env,
                                                                                         jobject instance,
                                                                                         jlong cubeDetectorHandle) {
     rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
@@ -181,7 +181,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetResultIm
 }
 
 JNIEXPORT jint JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetInputImageSize(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeGetInputImageSize(JNIEnv *env,
                                                                                        jobject instance,
                                                                                        jlong cubeDetectorHandle) {
     rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);
@@ -189,7 +189,7 @@ Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetInputIma
 }
 
 JNIEXPORT jint JNICALL
-Java_com_jorkoh_rubiksscanandsolve_rubikdetector_RubikDetector_nativeGetInputImageOffset(JNIEnv *env,
+Java_com_jorkoh_rubiksscanandsolve_scan_rubikdetector_RubikDetector_nativeGetInputImageOffset(JNIEnv *env,
                                                                                          jobject instance,
                                                                                          jlong cubeDetectorHandle) {
     rbdt::RubikProcessor &cubeDetector = *reinterpret_cast<rbdt::RubikProcessor *>(cubeDetectorHandle);

@@ -1,4 +1,4 @@
-package com.jorkoh.rubiksscanandsolve.rubikdetector;
+package com.jorkoh.rubiksscanandsolve.scan.rubikdetector;
 
 import android.util.Log;
 
@@ -6,9 +6,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.CubeState;
+import com.jorkoh.rubiksscanandsolve.model.CubeState;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 @SuppressWarnings("unused")
 public class RubikDetector {
@@ -238,20 +240,21 @@ public class RubikDetector {
             return null;
         }
 
-        CubeState result = new CubeState();
+        ArrayList<CubeState.Face> facelets = new ArrayList<>();
         CubeState.Face[] values = CubeState.Face.values();
         for (int i = 0; i < 54; i++) {
-            result.facelets[i] = values[detectionResult[i]];
+            facelets.add(values[detectionResult[i]]);
         }
+        List<Integer> colors = new ArrayList<>();
         for (int i = 0; i < 6; i++) {
-            result.colors[i] = ColorUtils.LABToColor(
+            colors.add(ColorUtils.LABToColor(
                     ((detectionResult[54 + i * 3] / 10000f) / 255f) * 100f,
                     detectionResult[54 + i * 3 + 1] / 10000f - 128,
                     detectionResult[54 + i * 3 + 2] / 10000f - 128
-            );
-            Log.d("TESTING", "Color #" + i + " has HEX: " + Integer.toHexString(result.colors[i]));
+            ));
+            Log.d("TESTING", "Color #" + i + " has HEX: " + Integer.toHexString(colors.get(i)));
         }
-        return result;
+        return new CubeState(facelets, colors);
     }
 
     /*

@@ -19,6 +19,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.findNavController
 import com.jorkoh.rubiksscanandsolve.R
+import com.jorkoh.rubiksscanandsolve.model.Solution
 import com.jorkoh.rubiksscanandsolve.scan.ScanViewModel.ScanStages.*
 import com.jorkoh.rubiksscanandsolve.scan.utils.AutoFitPreviewBuilder
 import kotlinx.android.synthetic.main.fragment_scan.*
@@ -146,8 +147,9 @@ class ScanFragment : Fragment() {
             }
         })
         scanVM.scanResult.observe(viewLifecycleOwner, Observer { scanResult ->
+            //TODO the creation of the solution has to be done async
             findNavController().navigate(
-                ScanFragmentDirections.actionScanFragmentToSolveFragment(scanResult)
+                ScanFragmentDirections.actionScanFragmentToSolveFragment(Solution(scanResult))
             )
         })
         scanVM.flashEnabled.observe(viewLifecycleOwner, Observer { flashEnabled ->

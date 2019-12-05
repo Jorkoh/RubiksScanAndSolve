@@ -5,11 +5,9 @@ import androidx.camera.core.ImageProxy
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.jorkoh.rubiksscanandsolve.rubikdetector.RubikDetector
-import com.jorkoh.rubiksscanandsolve.rubikdetector.RubikDetectorUtils
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.CubeState
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.toSolverScramble
-import com.jorkoh.rubiksscanandsolve.rubiksolver.Search
+import com.jorkoh.rubiksscanandsolve.model.CubeState
+import com.jorkoh.rubiksscanandsolve.scan.rubikdetector.RubikDetector
+import com.jorkoh.rubiksscanandsolve.scan.rubikdetector.RubikDetectorUtils
 import com.jorkoh.rubiksscanandsolve.scan.ScanViewModel.ScanStages.*
 import java.nio.ByteBuffer
 

@@ -1,4 +1,4 @@
-package com.jorkoh.rubiksscanandsolve.rubikdetector.model;
+package com.jorkoh.rubiksscanandsolve.scan.rubikdetector.model;
 
 
 import androidx.annotation.IntDef;

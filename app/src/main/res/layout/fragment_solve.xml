@@ -13,23 +13,29 @@
         cube:debuggable="true"
         cube:singleRotationSpeed="30" />
 
-    <TextView
-        android:id="@+id/text_solution"
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/layout_solution_steps"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="top"
-        android:gravity="center"
-        android:paddingTop="20dp"
         android:paddingStart="10dp"
+        android:paddingTop="20dp"
         android:paddingEnd="10dp"
-        android:textStyle="bold"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+        android:orientation="horizontal"/>
+
 
     <LinearLayout
-        android:paddingBottom="20dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom">
+        android:layout_gravity="bottom"
+        android:paddingBottom="20dp">
+
+        <ImageButton
+            android:id="@+id/button_reset"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/ic_replay_black_24dp" />
 
         <ImageButton
             android:id="@+id/button_previous"
@@ -47,16 +53,16 @@
 
         <ImageButton
             android:id="@+id/button_play"
-            android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:src="@drawable/ic_play_arrow_black_24dp" />
 
         <ImageButton
             android:id="@+id/button_next"
-            android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:src="@drawable/ic_skip_next_black_24dp" />
 
     </LinearLayout>

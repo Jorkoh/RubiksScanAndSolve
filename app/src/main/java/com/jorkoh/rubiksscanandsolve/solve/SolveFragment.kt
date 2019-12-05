@@ -1,5 +1,6 @@
 package com.jorkoh.rubiksscanandsolve.solve
 
+import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -7,10 +8,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.navArgs
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.jorkoh.rubiksscanandsolve.R
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.toSolverScramble
-import com.jorkoh.rubiksscanandsolve.rubikdetector.model.toVisualizerState
-import com.jorkoh.rubiksscanandsolve.rubiksolver.Search
+import com.jorkoh.rubiksscanandsolve.model.toVisualizerState
 import kotlinx.android.synthetic.main.fragment_solve.*
 
 class SolveFragment : Fragment() {
@@ -28,8 +29,12 @@ class SolveFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        button_reset.setOnClickListener {
+            cube.resetToInitialState()
+        }
+
         button_previous.setOnClickListener {
-            cube.animateMoveReversed()
+            cube.applyMoveReversed()
         }
 
         button_pause.setOnClickListener {
@@ -43,6 +48,20 @@ class SolveFragment : Fragment() {
         button_next.setOnClickListener {
             cube.animateMove()
         }
+
+        cube.setOnCubeModelUpdatedListener { newCubeModel, movePosition ->
+            Log.d("TESTING", "Move position: $movePosition")
+
+            for (i in 0 until layout_solution_steps.childCount) {
+                val solutionStep = layout_solution_steps.getChildAt(i) as Chip
+                solutionStep.isEnabled = i <= movePosition
+                solutionStep.paintFlags = if (i == movePosition) {
+                    solutionStep.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+                } else {
+                    solutionStep.paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
+                }
+            }
+        }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -51,14 +70,22 @@ class SolveFragment : Fragment() {
             cube.restoreState(it)
         }
 
-        cube.setCubeModel(args.cubeState.toVisualizerState())
-        cube.setCubeColors(args.cubeState.colors)
+        cube.setCubeModel(args.solution.initialState.toVisualizerState())
+        cube.setCubeColors(args.solution.initialState.colors.toIntArray())
+        cube.setMoveSequence(args.solution.solutionSteps.joinToString(" "))
+        inflateSolutionSteps(layout_solution_steps, args.solution.solutionSteps)
+    }
 
-        //TODO Calculation of the search has to be done in a coroutine
-        //TODO Probably should check that the state has a solution before this
-        val solution = Search().solution(args.cubeState.toSolverScramble(), 21, 100000000, 0, 0)
-        cube.setMoveSequence(solution)
-        text_solution.text = solution
+    private fun inflateSolutionSteps(container: ChipGroup, solutionSteps: List<String>) {
+        container.removeAllViews()
+        Log.d("TESTING", "Preparing to inflate steps: ${solutionSteps.joinToString(" ")}")
+        solutionSteps.forEachIndexed { index, step ->
+            Log.d("TESTING", "Inflating step $step with index $index")
+            LayoutInflater.from(context).inflate(R.layout.solution_step, container)
+
+            val solutionStep = container.getChildAt(index) as Chip
+            solutionStep.text = step
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

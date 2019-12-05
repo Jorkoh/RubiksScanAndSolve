@@ -1,4 +1,4 @@
-package com.jorkoh.rubiksscanandsolve.rubiksolver;
+package com.jorkoh.rubiksscanandsolve.solve.rubiksolver;
 
 import java.util.Arrays;
 
