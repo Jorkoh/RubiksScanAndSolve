@@ -1,3 +1,25 @@
 <resources>
     <string name="app_name">Rubik\'s Scan &amp; Solve</string>
+
+    <string name="stage_pre_first_scan" translatable="true">WAITING FIRST SCAN</string>
+    <string name="stage_pre_second_scan" translatable="true">WAITING SECOND SCAN</string>
+    <string name="stage_first_scan" translatable="true">FIRST SCAN</string>
+    <string name="stage_second_scan" translatable="true">SECOND SCAN</string>
+    <string name="stage_first_photo" translatable="true">FIRST PHOTO</string>
+    <string name="stage_second_photo" translatable="true">SECOND PHOTO</string>
+    <string name="stage_finished" translatable="true">FINISHED</string>
+
+    <string name="start_scanner" translatable="true">START SCANNER</string>
+    <string name="stop_scanner" translatable="true">STOP SCANNER</string>
+    <string name="disabled_scanner" translatable="false">-</string>
+
+    <string name="explanation_first_step" translatable="true">Start with any three faces, make sure that the edges of the cube follow the guideline. Consider enabling the flash to offset bad lightning conditions.</string>
+    <string name="explanation_second_step" translatable="true">Reorient the cube to scan the three faces not scanned on the first step. The face located at the top on the first step should now be placed at the bottom.</string>
+    <string name="explanation_finished" translatable="true">Calculating solution.</string>
+
+    <string name="control_reset_content_description" translatable="true">Reset</string>
+    <string name="control_previous_content_description" translatable="true">Previous step</string>
+    <string name="control_pause_content_description" translatable="true">Pause solve</string>
+    <string name="control_play_content_description" translatable="true">Play solve</string>
+    <string name="control_next_content_description" translatable="true">Next step</string>
 </resources>

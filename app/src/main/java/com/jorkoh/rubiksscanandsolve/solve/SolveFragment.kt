@@ -49,16 +49,39 @@ class SolveFragment : Fragment() {
             cube.animateMove()
         }
 
-        cube.setOnCubeModelUpdatedListener { newCubeModel, movePosition ->
+        cube.setOnCubeModelUpdatedListener { _, movePosition ->
             Log.d("TESTING", "Move position: $movePosition")
+            val stepsCount = args.solution.solutionSteps.size
 
-            for (i in 0 until layout_solution_steps.childCount) {
+            for (i in 0 until stepsCount) {
                 val solutionStep = layout_solution_steps.getChildAt(i) as Chip
+
                 solutionStep.isEnabled = i <= movePosition
                 solutionStep.paintFlags = if (i == movePosition) {
                     solutionStep.paintFlags or Paint.UNDERLINE_TEXT_FLAG
                 } else {
                     solutionStep.paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
+                }
+            }
+
+            when (movePosition) {
+                0 -> {
+                    button_reset.isEnabled = false
+                    button_previous.isEnabled = false
+                    button_play.isEnabled = true
+                    button_next.isEnabled = true
+                }
+                stepsCount - 1 -> {
+                    button_reset.isEnabled = true
+                    button_previous.isEnabled = true
+                    button_play.isEnabled = false
+                    button_next.isEnabled = false
+                }
+                else -> {
+                    button_reset.isEnabled = true
+                    button_previous.isEnabled = true
+                    button_play.isEnabled = true
+                    button_next.isEnabled = true
                 }
             }
         }
@@ -78,9 +101,7 @@ class SolveFragment : Fragment() {
 
     private fun inflateSolutionSteps(container: ChipGroup, solutionSteps: List<String>) {
         container.removeAllViews()
-        Log.d("TESTING", "Preparing to inflate steps: ${solutionSteps.joinToString(" ")}")
         solutionSteps.forEachIndexed { index, step ->
-            Log.d("TESTING", "Inflating step $step with index $index")
             LayoutInflater.from(context).inflate(R.layout.solution_step, container)
 
             val solutionStep = container.getChildAt(index) as Chip

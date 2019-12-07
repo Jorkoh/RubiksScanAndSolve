@@ -6,6 +6,16 @@
     android:layout_height="match_parent"
     tools:context=".scan.ScanFragment">
 
+    <TextView
+        android:id="@+id/text_view_stage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        app:layout_constraintBottom_toTopOf="@+id/card_preview"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_end_preview"
+        app:layout_constraintStart_toStartOf="@+id/guideline_start_preview"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <androidx.cardview.widget.CardView
         android:id="@+id/card_preview"
         android:layout_width="0dp"
@@ -13,7 +23,7 @@
         android:elevation="6dp"
         app:cardCornerRadius="20dp"
         app:cardPreventCornerOverlap="false"
-        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintDimensionRatio="1"
         app:layout_constraintEnd_toStartOf="@id/guideline_end_preview"
         app:layout_constraintStart_toEndOf="@id/guideline_start_preview"
         app:layout_constraintTop_toBottomOf="@id/guideline_top_preview">
@@ -38,18 +48,21 @@
         android:layout_marginTop="24dp"
         android:enabled="false"
         android:text=""
-        app:layout_constraintEnd_toStartOf="@id/button_switch_flash"
+        app:layout_constraintEnd_toStartOf="@+id/button_switch_flash"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/card_preview" />
 
     <Button
         android:id="@+id/button_switch_flash"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text=""
+        android:background="@drawable/ic_flash_on_black_24dp"
+        app:layout_constraintBottom_toBottomOf="@+id/button_scan"
+        app:layout_constraintDimensionRatio="1"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/button_scan"
         app:layout_constraintTop_toBottomOf="@+id/card_preview" />
 
@@ -59,14 +72,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.1" />
+        app:layout_constraintGuide_percent="0.15" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_start_preview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.10" />
+        app:layout_constraintGuide_percent="0.1" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_end_preview"
@@ -75,25 +88,15 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.9" />
 
+
+
     <TextView
-        android:id="@+id/text_view_scan_result"
-        android:layout_width="wrap_content"
+        android:id="@+id/text_view_step_explanation"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text=""
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end_preview"
         app:layout_constraintStart_toStartOf="@+id/guideline_start_preview"
         app:layout_constraintTop_toBottomOf="@+id/button_scan" />
-
-    <TextView
-        android:id="@+id/text_view_stage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        app:layout_constraintBottom_toTopOf="@+id/card_preview"
-        app:layout_constraintEnd_toStartOf="@+id/guideline_end_preview"
-        app:layout_constraintStart_toStartOf="@+id/guideline_start_preview"
-        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

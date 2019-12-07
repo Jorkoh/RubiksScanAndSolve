@@ -84,39 +84,38 @@ class ScanFragment : Fragment() {
         }
     }
 
+    @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         scanVM = ViewModelProviders.of(this)[ScanViewModel::class.java]
         scanVM.scanStage.observe(viewLifecycleOwner, Observer { stage ->
+            text_view_stage.text = when (stage) {
+                PRE_FIRST_SCAN -> getString(R.string.stage_pre_first_scan)
+                PRE_SECOND_SCAN -> getString(R.string.stage_pre_second_scan)
+                FIRST_SCAN -> getString(R.string.stage_first_scan)
+                SECOND_SCAN -> getString(R.string.stage_second_scan)
+                FIRST_PHOTO -> getString(R.string.stage_first_photo)
+                SECOND_PHOTO -> getString(R.string.stage_second_photo)
+                FINISHED -> getString(R.string.stage_finished)
+            }
+
+            text_view_step_explanation.text = when(stage){
+                PRE_FIRST_SCAN, FIRST_SCAN, FIRST_PHOTO -> getString(R.string.explanation_first_step)
+                PRE_SECOND_SCAN, SECOND_SCAN, SECOND_PHOTO-> getString(R.string.explanation_second_step)
+                FINISHED -> getString(R.string.explanation_finished)
+            }
+
             when (stage) {
-                PRE_FIRST_SCAN -> {
+                PRE_FIRST_SCAN, PRE_SECOND_SCAN -> {
                     view_finder_overlay.background.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_ATOP)
-                    button_scan.isEnabled = true
-                    button_scan.text = "START SCANNER"
-                    text_view_stage.text = "WAITING FIRST SCAN"
+                    button_scan.text = getString(R.string.start_scanner)
                 }
-                PRE_SECOND_SCAN -> {
-                    view_finder_overlay.background.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_ATOP)
-                    button_scan.isEnabled = true
-                    button_scan.text = "START SCANNER"
-                    text_view_stage.text = "WAITING SECOND SCAN"
-                }
-                FIRST_SCAN -> {
+                FIRST_SCAN, SECOND_SCAN -> {
                     view_finder_overlay.background.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP)
-                    button_scan.isEnabled = true
-                    button_scan.text = "STOP SCANNER"
-                    text_view_stage.text = "FIRST SCAN"
+                    button_scan.text = getString(R.string.stop_scanner)
                 }
-                SECOND_SCAN -> {
-                    view_finder_overlay.background.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP)
-                    button_scan.isEnabled = true
-                    button_scan.text = "STOP SCANNER"
-                    text_view_stage.text = "SECOND SCAN"
-                }
-                FIRST_PHOTO -> {
+                FIRST_PHOTO, SECOND_PHOTO -> {
                     view_finder_overlay.background.setColorFilter(Color.BLUE, PorterDuff.Mode.SRC_ATOP)
-                    text_view_stage.text = "FIRST PHOTO"
-                    button_scan.isEnabled = true
                     imageCapture?.takePicture(executor, object : ImageCapture.OnImageCapturedListener() {
                         override fun onCaptureSuccess(image: ImageProxy, rotationDegrees: Int) {
                             scanVM.processPhoto(image, rotationDegrees)
@@ -124,41 +123,28 @@ class ScanFragment : Fragment() {
                         }
                     })
                 }
-                SECOND_PHOTO -> {
-                    view_finder_overlay.background.setColorFilter(Color.BLUE, PorterDuff.Mode.SRC_ATOP)
-                    text_view_stage.text = "SECOND PHOTO"
-                    button_scan.isEnabled = true
-                    imageCapture?.takePicture(executor, object : ImageCapture.OnImageCapturedListener() {
-                        override fun onCaptureSuccess(image: ImageProxy, rotationDegrees: Int) {
-                            scanVM.processPhoto(image, rotationDegrees)
-                            super.onCaptureSuccess(image, rotationDegrees)
-                        }
-                    })
-                }
-                DONE -> {
+                FINISHED -> {
                     view_finder_overlay.background.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_ATOP)
-                    button_scan.isEnabled = false
-                    button_scan.text = "DONE"
-                    text_view_stage.text = "DONE"
-                }
-                else -> {
-                    // Do nothing
+                    button_scan.text = getString(R.string.disabled_scanner)
                 }
             }
+
+            button_scan.isEnabled = stage != FINISHED
         })
-        scanVM.scanResult.observe(viewLifecycleOwner, Observer { scanResult ->
-            //TODO the creation of the solution has to be done async
+        scanVM.solution.observe(viewLifecycleOwner, Observer { solution ->
             findNavController().navigate(
-                ScanFragmentDirections.actionScanFragmentToSolveFragment(Solution(scanResult))
+                ScanFragmentDirections.actionScanFragmentToSolveFragment(solution)
             )
         })
         scanVM.flashEnabled.observe(viewLifecycleOwner, Observer { flashEnabled ->
             preview?.enableTorch(flashEnabled)
-            button_switch_flash.text = if (flashEnabled) {
-                "TURN OFF FLASH"
-            } else {
-                "TURN ON FLASH"
-            }
+            button_switch_flash.setBackgroundResource(
+                if (flashEnabled) {
+                    R.drawable.ic_flash_off_black_24dp
+                } else {
+                    R.drawable.ic_flash_on_black_24dp
+                }
+            )
         })
     }
 

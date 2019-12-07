@@ -411,7 +411,7 @@ namespace rbdt {
                                           const uint8_t *data) {
         int savedFacelets = 0;
         int phaseOffset = 0;
-        if (isSecondPhase) {
+        if (!isSecondPhase) {
             phaseOffset = 27 * faceletByteCount;
         }
         // Top

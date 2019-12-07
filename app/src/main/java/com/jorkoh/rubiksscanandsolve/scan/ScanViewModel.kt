@@ -5,10 +5,10 @@ import androidx.camera.core.ImageProxy
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.jorkoh.rubiksscanandsolve.model.CubeState
+import com.jorkoh.rubiksscanandsolve.model.Solution
+import com.jorkoh.rubiksscanandsolve.scan.ScanViewModel.ScanStages.*
 import com.jorkoh.rubiksscanandsolve.scan.rubikdetector.RubikDetector
 import com.jorkoh.rubiksscanandsolve.scan.rubikdetector.RubikDetectorUtils
-import com.jorkoh.rubiksscanandsolve.scan.ScanViewModel.ScanStages.*
 import java.nio.ByteBuffer
 
 class ScanViewModel : ViewModel() {
@@ -20,16 +20,16 @@ class ScanViewModel : ViewModel() {
         PRE_SECOND_SCAN,
         SECOND_SCAN,
         SECOND_PHOTO,
-        DONE
+        FINISHED
     }
 
     val scanStage: LiveData<ScanStages>
         get() = _scanStage
     private val _scanStage = MutableLiveData<ScanStages>(PRE_FIRST_SCAN)
 
-    val scanResult: LiveData<CubeState>
-        get() = _scanResult
-    private val _scanResult = MutableLiveData<CubeState>()
+    val solution: LiveData<Solution>
+        get() = _solution
+    private val _solution = MutableLiveData<Solution>()
 
     val flashEnabled: LiveData<Boolean>
         get() = _flashEnabled
@@ -91,8 +91,10 @@ class ScanViewModel : ViewModel() {
                     _scanStage.postValue(PRE_SECOND_SCAN)
                 }
                 SECOND_PHOTO -> {
-                    _scanResult.postValue(rubikDetector.analyzeColors(scanDataBuffer))
-                    _scanStage.postValue(DONE)
+                    val initialState = rubikDetector.analyzeColors(scanDataBuffer)
+                    //TODO handle cases where colors are not properly recognized or cube is not valid
+                    _solution.postValue(Solution(initialState))
+                    _scanStage.postValue(FINISHED)
                 }
                 else -> {
                     // Do nothing
