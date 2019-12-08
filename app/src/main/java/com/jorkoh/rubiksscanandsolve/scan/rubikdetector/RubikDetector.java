@@ -116,6 +116,7 @@ public class RubikDetector {
         return false;
     }
 
+    @Nullable
     public CubeState analyzeColors(@NonNull ByteBuffer imageDataBuffer) {
         if (!imageDataBuffer.isDirect()) {
             throw new IllegalArgumentException("The image data buffer needs to be a direct buffer.");

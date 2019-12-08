@@ -9,3 +9,7 @@ class Solution(
     val solutionSteps: List<String> = initialState.calculateSolution(),
     val states: List<CubeState> = initialState.calculateStates(solutionSteps)
 ) : Parcelable
+
+fun Solution.isError() : Boolean {
+    return solutionSteps[0] == "Error"
+}

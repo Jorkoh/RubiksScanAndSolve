@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.jorkoh.rubiksscanandsolve.model.Solution
+import com.jorkoh.rubiksscanandsolve.model.isError
 import com.jorkoh.rubiksscanandsolve.scan.ScanViewModel.ScanStages.*
 import com.jorkoh.rubiksscanandsolve.scan.rubikdetector.RubikDetector
 import com.jorkoh.rubiksscanandsolve.scan.rubikdetector.RubikDetectorUtils
@@ -92,9 +93,18 @@ class ScanViewModel : ViewModel() {
                 }
                 SECOND_PHOTO -> {
                     val initialState = rubikDetector.analyzeColors(scanDataBuffer)
+                    if (initialState == null) {
+                        _scanStage.postValue(PRE_FIRST_SCAN)
+                    } else {
+                        val solution = Solution(initialState)
+                        if (solution.isError()) {
+                            _scanStage.postValue(PRE_FIRST_SCAN)
+                        } else {
+                            _solution.postValue(solution)
+                            _scanStage.postValue(FINISHED)
+                        }
+                    }
                     //TODO handle cases where colors are not properly recognized or cube is not valid
-                    _solution.postValue(Solution(initialState))
-                    _scanStage.postValue(FINISHED)
                 }
                 else -> {
                     // Do nothing

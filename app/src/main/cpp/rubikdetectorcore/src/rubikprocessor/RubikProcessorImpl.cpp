@@ -674,71 +674,64 @@ namespace rbdt {
         }
 
         std::vector<int> labels;
-        std::vector<cv::Scalar> centers;
+        std::vector<cv::Scalar> kMeansCenters;
         int expectedDifferentColors = 6;
 
-        cv::TermCriteria criteria(CV_TERMCRIT_ITER, 100, 0.5);
-        cv::kmeans(meanValues, expectedDifferentColors, labels, criteria, 100, cv::KmeansFlags::KMEANS_PP_CENTERS, centers);
+        cv::TermCriteria criteria(CV_TERMCRIT_ITER, 10, 0.5);
+        cv::kmeans(meanValues, expectedDifferentColors, labels, criteria, 10, cv::KmeansFlags::KMEANS_PP_CENTERS, kMeansCenters);
 
-        int upLabel = labels[4];
-        int frontLabel = labels[13];
-        int rightLabel = labels[22];
-        int downLabel = labels[31];
-        int leftLabel = labels[40];
-        int backLabel = labels[49];
+        // UP, FRONT, RIGHT, DOWN, LEFT, BACK
+        std::vector<int> faceCentersLabels;
+        faceCentersLabels.emplace_back(labels[4]);
+        faceCentersLabels.emplace_back(labels[13]);
+        faceCentersLabels.emplace_back(labels[22]);
+        faceCentersLabels.emplace_back(labels[31]);
+        faceCentersLabels.emplace_back(labels[40]);
+        faceCentersLabels.emplace_back(labels[49]);
 
-
-        //Asume it's being tested in white top, green front, red right -> yellow top, orange front, blue left
-        LOG_DEBUG("TESTING", "Labels: white %d, green %d, red %d, yellow %d, orange %d and blue %d",
-                  upLabel, frontLabel, rightLabel, downLabel, leftLabel, backLabel);
-        for (int i = 0; i < 54; i++) {
-            std::string color;
-            if (labels[i] == upLabel) {
-                color += "W";
-            } else if (labels[i] == frontLabel) {
-                color += "G";
-            } else if (labels[i] == rightLabel) {
-                color += "R";
-            } else if (labels[i] == downLabel) {
-                color += "Y";
-            } else if (labels[i] == leftLabel) {
-                color += "O";
-            } else if (labels[i] == backLabel) {
-                color += "B";
+        for (int i = 0; i < 6; i++) {
+            for (int j = i + 1; j < 6; j++) {
+                if (faceCentersLabels[i] == faceCentersLabels[j]) {
+                    // If different centers have the same label the cube is invalid or the colors have been misidentified
+                    return CubeState();
+                }
             }
+        }
+
+        for (int i = 0; i < 54; i++) {
             LOG_DEBUG("TESTING",
-                      "Facelet %d with mean LAB (%.2f, %.2f, %.2f) has been labeled as part of group %d (%s) which has center on (%.2f, %.2f, %.2f)",
+                      "Facelet %d with mean LAB (%.2f, %.2f, %.2f) has been labeled as part of group %d which has center on (%.2f, %.2f, %.2f)",
                       i + 1,
                       meanValues[i][0], meanValues[i][1], meanValues[i][2],
                       labels[i],
-                      color.c_str(),
-                      centers[labels[i]][0], centers[labels[i]][1], centers[labels[i]][2]);
+                      kMeansCenters[labels[i]][0], kMeansCenters[labels[i]][1], kMeansCenters[labels[i]][2]);
         }
 
 
         std::vector<CubeState::Face> facelets(0);
         for (int i = 0; i < 54; i++) {
-            if (labels[i] == upLabel) {
+            if (labels[i] == faceCentersLabels[0]) {
                 facelets.emplace_back(CubeState::Face::UP);
-            } else if (labels[i] == frontLabel) {
+            } else if (labels[i] == faceCentersLabels[1]) {
                 facelets.emplace_back(CubeState::Face::FRONT);
-            } else if (labels[i] == rightLabel) {
+            } else if (labels[i] == faceCentersLabels[2]) {
                 facelets.emplace_back(CubeState::Face::RIGHT);
-            } else if (labels[i] == downLabel) {
+            } else if (labels[i] == faceCentersLabels[3]) {
                 facelets.emplace_back(CubeState::Face::DOWN);
-            } else if (labels[i] == leftLabel) {
+            } else if (labels[i] == faceCentersLabels[4]) {
                 facelets.emplace_back(CubeState::Face::LEFT);
-            } else if (labels[i] == backLabel) {
+            } else if (labels[i] == faceCentersLabels[5]) {
                 facelets.emplace_back(CubeState::Face::BACK);
             }
         }
+
         std::vector<cv::Scalar> colors(0);
-        colors.emplace_back(centers[upLabel]);
-        colors.emplace_back(centers[frontLabel]);
-        colors.emplace_back(centers[rightLabel]);
-        colors.emplace_back(centers[downLabel]);
-        colors.emplace_back(centers[leftLabel]);
-        colors.emplace_back(centers[backLabel]);
+        colors.emplace_back(kMeansCenters[faceCentersLabels[0]]);
+        colors.emplace_back(kMeansCenters[faceCentersLabels[1]]);
+        colors.emplace_back(kMeansCenters[faceCentersLabels[2]]);
+        colors.emplace_back(kMeansCenters[faceCentersLabels[3]]);
+        colors.emplace_back(kMeansCenters[faceCentersLabels[4]]);
+        colors.emplace_back(kMeansCenters[faceCentersLabels[5]]);
 
         return CubeState(facelets, colors);
         /**/
