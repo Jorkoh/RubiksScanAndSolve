@@ -104,7 +104,6 @@ class ScanViewModel : ViewModel() {
                             _scanStage.postValue(FINISHED)
                         }
                     }
-                    //TODO handle cases where colors are not properly recognized or cube is not valid
                 }
                 else -> {
                     // Do nothing
