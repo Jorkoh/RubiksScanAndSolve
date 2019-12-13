@@ -9,7 +9,6 @@ import android.view.TextureView
 import android.view.ViewGroup
 import androidx.camera.core.Preview
 import androidx.camera.core.PreviewConfig
-import java.lang.IllegalArgumentException
 import java.lang.ref.WeakReference
 
 
@@ -32,10 +31,7 @@ class AutoFitPreviewBuilder private constructor(config: PreviewConfig, viewFinde
 
         // Initialize the display and rotation from texture view information
         viewFinderDisplay = viewFinder.display.displayId
-        viewFinderRotation = getDisplaySurfaceRotation(
-            viewFinder.display
-        )
-            ?: 0
+        viewFinderRotation = getDisplaySurfaceRotation(viewFinder.display) ?: 0
 
         // Initialize public use-case with the given config
         useCase = Preview(config)

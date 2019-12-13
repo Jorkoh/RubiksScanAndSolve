@@ -46,19 +46,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:enabled="false"
-        android:text=""
         app:layout_constraintEnd_toStartOf="@+id/button_switch_flash"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/card_preview" />
 
-    <Button
+    <ImageView
         android:id="@+id/button_switch_flash"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:background="@drawable/ic_flash_on_black_24dp"
+        android:scaleType="fitCenter"
+        app:srcCompat="@drawable/asl_trimclip_flashlight"
         app:layout_constraintBottom_toBottomOf="@+id/button_scan"
         app:layout_constraintDimensionRatio="1"
         app:layout_constraintEnd_toEndOf="parent"
@@ -88,12 +87,11 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.9" />
 
-
-
     <TextView
         android:id="@+id/text_view_step_explanation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end_preview"
         app:layout_constraintStart_toStartOf="@+id/guideline_start_preview"

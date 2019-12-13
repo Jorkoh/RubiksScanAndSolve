@@ -3,7 +3,7 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    app:chipBackgroundColor="@android:color/white"
+    app:chipBackgroundColor="@color/bg_chip_state_list"
     android:textStyle="bold"
     android:gravity="center"
     android:layout_marginBottom="4dp"

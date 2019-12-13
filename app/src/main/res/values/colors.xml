@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="colorPrimary">#000000</color>
+    <color name="colorPrimaryDark">#232323</color>
+    <color name="colorAccent">#000000</color>
+    <color name="solveBackground">#222222</color>
+    <color name="chipBackgroundSelected">#565656</color>
+    <color name="chipBackground">#333333</color>
 </resources>

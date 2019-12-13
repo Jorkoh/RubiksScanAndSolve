@@ -11,11 +11,9 @@
 
     <string name="start_scanner" translatable="true">START SCANNER</string>
     <string name="stop_scanner" translatable="true">STOP SCANNER</string>
-    <string name="disabled_scanner" translatable="false">-</string>
 
     <string name="explanation_first_step" translatable="true">Start with any three faces, make sure that the edges of the cube follow the guideline. Consider enabling the flash to offset bad lightning conditions.</string>
     <string name="explanation_second_step" translatable="true">Reorient the cube to scan the three faces not scanned on the first step. The face located at the top on the first step should now be placed at the bottom.</string>
-    <string name="explanation_finished" translatable="true">Calculating solution.</string>
 
     <string name="control_reset_content_description" translatable="true">Reset</string>
     <string name="control_previous_content_description" translatable="true">Previous step</string>

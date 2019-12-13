@@ -209,6 +209,10 @@ fun CubeState.calculateSolution(): List<String> {
 }
 
 fun CubeState.calculateStates(steps: List<String>): List<CubeState> {
+    if(steps[0] == "Error"){
+        return listOf(this)
+    }
+
     Log.d("TESTING", "Calculating states for solution ${steps.joinToString(" ")}")
     var previousState = this
     return steps.map { move ->

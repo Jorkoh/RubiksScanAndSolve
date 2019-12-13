@@ -28,9 +28,7 @@ class ScanViewModel : ViewModel() {
         get() = _scanStage
     private val _scanStage = MutableLiveData<ScanStages>(PRE_FIRST_SCAN)
 
-    val solution: LiveData<Solution>
-        get() = _solution
-    private val _solution = MutableLiveData<Solution>()
+    var solution: Solution? = null
 
     val flashEnabled: LiveData<Boolean>
         get() = _flashEnabled
@@ -100,7 +98,7 @@ class ScanViewModel : ViewModel() {
                         if (solution.isError()) {
                             _scanStage.postValue(PRE_FIRST_SCAN)
                         } else {
-                            _solution.postValue(solution)
+                            this.solution = solution
                             _scanStage.postValue(FINISHED)
                         }
                     }
@@ -148,6 +146,10 @@ class ScanViewModel : ViewModel() {
 
     fun switchFlash() {
         _flashEnabled.postValue(!(flashEnabled.value ?: false))
+    }
+
+    fun resetScanProgress(){
+        _scanStage.postValue(PRE_FIRST_SCAN)
     }
 
     override fun onCleared() {

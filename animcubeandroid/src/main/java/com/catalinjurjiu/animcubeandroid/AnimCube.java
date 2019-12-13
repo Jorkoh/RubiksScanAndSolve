@@ -1337,7 +1337,7 @@ public class AnimCube extends SurfaceView implements View.OnTouchListener {
                 int[] mv = move;
                 if (moveDir > 0) {
                     if (movePos >= mv.length) {
-                        movePos = 0;
+                        break;
                     }
                 } else {
                     if (movePos == 0) {

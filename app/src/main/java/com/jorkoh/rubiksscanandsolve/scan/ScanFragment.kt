@@ -9,17 +9,18 @@ import android.graphics.PorterDuff
 import android.hardware.display.DisplayManager
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.*
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.findNavController
 import com.jorkoh.rubiksscanandsolve.R
-import com.jorkoh.rubiksscanandsolve.model.Solution
 import com.jorkoh.rubiksscanandsolve.scan.ScanViewModel.ScanStages.*
 import com.jorkoh.rubiksscanandsolve.scan.utils.AutoFitPreviewBuilder
 import kotlinx.android.synthetic.main.fragment_scan.*
@@ -34,6 +35,7 @@ class ScanFragment : Fragment() {
 
     private val executor = Executors.newCachedThreadPool()
 
+    private lateinit var viewFinder: TextureView
     private var displayId = -1
     private var preview: Preview? = null
     private var imageAnalyzer: ImageAnalysis? = null
@@ -52,11 +54,6 @@ class ScanFragment : Fragment() {
         } ?: Unit
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        retainInstance = true
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -67,6 +64,9 @@ class ScanFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val container = view as ConstraintLayout
+        viewFinder = container.findViewById(R.id.view_finder)
+
         button_scan.setOnClickListener {
             scanVM.startStopScanning()
         }
@@ -74,12 +74,16 @@ class ScanFragment : Fragment() {
             scanVM.switchFlash()
         }
 
-        displayManager = view_finder.context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+        displayManager = viewFinder.context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
         displayManager.registerDisplayListener(displayListener, null)
 
-        view_finder.post {
-            displayId = view_finder.display.displayId
-
+        if (viewFinder.display == null) {
+            viewFinder.post {
+                displayId = viewFinder.display.displayId
+                enableScannerWithPermissionCheck()
+            }
+        } else {
+            displayId = viewFinder.display.displayId
             enableScannerWithPermissionCheck()
         }
     }
@@ -99,10 +103,10 @@ class ScanFragment : Fragment() {
                 FINISHED -> getString(R.string.stage_finished)
             }
 
-            text_view_step_explanation.text = when(stage){
+            text_view_step_explanation.text = when (stage) {
                 PRE_FIRST_SCAN, FIRST_SCAN, FIRST_PHOTO -> getString(R.string.explanation_first_step)
-                PRE_SECOND_SCAN, SECOND_SCAN, SECOND_PHOTO-> getString(R.string.explanation_second_step)
-                FINISHED -> getString(R.string.explanation_finished)
+                PRE_SECOND_SCAN, SECOND_SCAN, SECOND_PHOTO -> getString(R.string.explanation_second_step)
+                else -> ""
             }
 
             when (stage) {
@@ -124,27 +128,17 @@ class ScanFragment : Fragment() {
                     })
                 }
                 FINISHED -> {
-                    view_finder_overlay.background.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_ATOP)
-                    button_scan.text = getString(R.string.disabled_scanner)
+                    findNavController().navigate(
+                        ScanFragmentDirections.actionScanFragmentToSolveFragment(scanVM.solution!!)
+                    )
+                    scanVM.resetScanProgress()
                 }
             }
 
-            button_scan.isEnabled = stage != FINISHED
-        })
-        scanVM.solution.observe(viewLifecycleOwner, Observer { solution ->
-            findNavController().navigate(
-                ScanFragmentDirections.actionScanFragmentToSolveFragment(solution)
-            )
         })
         scanVM.flashEnabled.observe(viewLifecycleOwner, Observer { flashEnabled ->
             preview?.enableTorch(flashEnabled)
-            button_switch_flash.setBackgroundResource(
-                if (flashEnabled) {
-                    R.drawable.ic_flash_off_black_24dp
-                } else {
-                    R.drawable.ic_flash_on_black_24dp
-                }
-            )
+            button_switch_flash.isActivated = flashEnabled
         })
     }
 
@@ -155,15 +149,15 @@ class ScanFragment : Fragment() {
         val viewFinderConfig = PreviewConfig.Builder().apply {
             setLensFacing(CameraX.LensFacing.BACK)
             setTargetAspectRatio(AspectRatio.RATIO_4_3)
-            setTargetRotation(view_finder.display.rotation)
+            setTargetRotation(viewFinder.display.rotation)
         }.build()
-        preview = AutoFitPreviewBuilder.build(viewFinderConfig, view_finder)
+        preview = AutoFitPreviewBuilder.build(viewFinderConfig, viewFinder)
 
         // Analyzer
         val analyzerConfig = ImageAnalysisConfig.Builder().apply {
             setLensFacing(CameraX.LensFacing.BACK)
             setTargetAspectRatio(AspectRatio.RATIO_4_3)
-            setTargetRotation(view_finder.display.rotation)
+            setTargetRotation(viewFinder.display.rotation)
             setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
         }.build()
         imageAnalyzer = ImageAnalysis(analyzerConfig).apply {
@@ -172,15 +166,14 @@ class ScanFragment : Fragment() {
             })
         }
 
-        // Set up the capture use case to allow users to take photos
+        // Photo capture
         val imageCaptureConfig = ImageCaptureConfig.Builder().apply {
             setLensFacing(CameraX.LensFacing.BACK)
             setBufferFormat(ImageFormat.YUV_420_888)
             setCaptureMode(ImageCapture.CaptureMode.MAX_QUALITY)
             setTargetAspectRatio(AspectRatio.RATIO_4_3)
-            setTargetRotation(view_finder.display.rotation)
+            setTargetRotation(viewFinder.display.rotation)
         }.build()
-
         imageCapture = ImageCapture(imageCaptureConfig)
 
         CameraX.bindToLifecycle(viewLifecycleOwner, preview, imageAnalyzer, imageCapture)

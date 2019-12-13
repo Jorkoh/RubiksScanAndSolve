@@ -2,11 +2,11 @@ package com.jorkoh.rubiksscanandsolve.solve
 
 import android.graphics.Paint
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -50,7 +50,10 @@ class SolveFragment : Fragment() {
         }
 
         cube.setOnCubeModelUpdatedListener { _, movePosition ->
-            Log.d("TESTING", "Move position: $movePosition")
+            if(!lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED)){
+                return@setOnCubeModelUpdatedListener
+            }
+
             val stepsCount = args.solution.solutionSteps.size
 
             for (i in 0 until stepsCount) {
@@ -64,14 +67,14 @@ class SolveFragment : Fragment() {
                 }
             }
 
-            when (movePosition) {
-                0 -> {
+            when {
+                movePosition == 0 -> {
                     button_reset.isEnabled = false
                     button_previous.isEnabled = false
                     button_play.isEnabled = true
                     button_next.isEnabled = true
                 }
-                stepsCount - 1 -> {
+                movePosition >= stepsCount - 1 -> {
                     button_reset.isEnabled = true
                     button_previous.isEnabled = true
                     button_play.isEnabled = false

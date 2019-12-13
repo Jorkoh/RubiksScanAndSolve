@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         cube:backFacesDistance="4"
-        cube:backgroundColor="#eeeeee"
+        cube:backgroundColor="@color/solveBackground"
         cube:debuggable="true"
         cube:singleRotationSpeed="30" />
 
@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:contentDescription="@string/control_reset_content_description"
-            android:src="@drawable/ic_replay_black_24dp" />
+            android:src="@drawable/ic_replay_24dp" />
 
         <ImageButton
             android:id="@+id/button_previous"
@@ -44,7 +44,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:contentDescription="@string/control_previous_content_description"
-            android:src="@drawable/ic_skip_previous_black_24dp" />
+            android:src="@drawable/ic_previous_24dp" />
 
         <ImageButton
             android:id="@+id/button_pause"
@@ -52,7 +52,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:contentDescription="@string/control_pause_content_description"
-            android:src="@drawable/ic_pause_black_24dp" />
+            android:src="@drawable/ic_pause_24dp" />
 
         <ImageButton
             android:id="@+id/button_play"
@@ -60,7 +60,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:contentDescription="@string/control_play_content_description"
-            android:src="@drawable/ic_play_arrow_black_24dp" />
+            android:src="@drawable/ic_play_24dp" />
 
         <ImageButton
             android:id="@+id/button_next"
@@ -68,7 +68,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:contentDescription="@string/control_next_content_description"
-            android:src="@drawable/ic_skip_next_black_24dp" />
+            android:src="@drawable/ic_next_24dp" />
 
     </LinearLayout>
 
