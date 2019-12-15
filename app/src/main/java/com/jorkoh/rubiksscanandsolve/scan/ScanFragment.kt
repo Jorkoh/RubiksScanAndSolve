@@ -6,12 +6,14 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.ImageFormat
 import android.graphics.PorterDuff
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.hardware.display.DisplayManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.*
@@ -67,6 +69,10 @@ class ScanFragment : Fragment() {
         val container = view as ConstraintLayout
         viewFinder = container.findViewById(R.id.view_finder)
 
+        button_reset.setOnClickListener {
+            scanVM.resetScanProgress()
+            (button_reset.drawable as? AnimatedVectorDrawable)?.start()
+        }
         button_scan.setOnClickListener {
             scanVM.startStopScanning()
         }
@@ -93,6 +99,15 @@ class ScanFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
         scanVM = ViewModelProviders.of(this)[ScanViewModel::class.java]
         scanVM.scanStage.observe(viewLifecycleOwner, Observer { stage ->
+            when (stage) {
+                PRE_FIRST_SCAN -> statusViewScroller.setPosition(0)
+                PRE_SECOND_SCAN -> statusViewScroller.setPosition(1)
+                FINDING_SOLUTION -> statusViewScroller.setPosition(2)
+                else -> {
+                    // DO NOTHING
+                }
+            }
+
             text_view_stage.text = when (stage) {
                 PRE_FIRST_SCAN -> getString(R.string.stage_pre_first_scan)
                 PRE_SECOND_SCAN -> getString(R.string.stage_pre_second_scan)
@@ -100,12 +115,14 @@ class ScanFragment : Fragment() {
                 SECOND_SCAN -> getString(R.string.stage_second_scan)
                 FIRST_PHOTO -> getString(R.string.stage_first_photo)
                 SECOND_PHOTO -> getString(R.string.stage_second_photo)
+                FINDING_SOLUTION -> getString(R.string.stage_find_solution)
                 FINISHED -> getString(R.string.stage_finished)
             }
 
             text_view_step_explanation.text = when (stage) {
-                PRE_FIRST_SCAN, FIRST_SCAN, FIRST_PHOTO -> getString(R.string.explanation_first_step)
-                PRE_SECOND_SCAN, SECOND_SCAN, SECOND_PHOTO -> getString(R.string.explanation_second_step)
+                PRE_FIRST_SCAN, FIRST_SCAN, FIRST_PHOTO -> getString(R.string.explanation_first_scan_step)
+                PRE_SECOND_SCAN, SECOND_SCAN, SECOND_PHOTO -> getString(R.string.explanation_second_scan_step)
+                FINDING_SOLUTION -> getString(R.string.explanation_find_solution_step)
                 else -> ""
             }
 
@@ -127,6 +144,9 @@ class ScanFragment : Fragment() {
                         }
                     })
                 }
+                FINDING_SOLUTION -> {
+                    view_finder_overlay.background.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_ATOP)
+                }
                 FINISHED -> {
                     findNavController().navigate(
                         ScanFragmentDirections.actionScanFragmentToSolveFragment(scanVM.solution!!)
@@ -135,6 +155,7 @@ class ScanFragment : Fragment() {
                 }
             }
 
+            button_scan.isEnabled = stage != FINDING_SOLUTION
         })
         scanVM.flashEnabled.observe(viewLifecycleOwner, Observer { flashEnabled ->
             preview?.enableTorch(flashEnabled)

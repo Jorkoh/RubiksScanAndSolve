@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="InkPageIndicator">
+        <attr name="mis_pageCount" format="integer" />
+        <attr name="mis_dotDiameter" format="dimension" />
+        <attr name="mis_dotGap" format="dimension" />
+        <attr name="mis_animationDuration" format="integer" />
+        <attr name="mis_pageIndicatorColor" format="color" />
+        <attr name="mis_currentPageIndicatorColor" format="color" />
+    </declare-styleable>
+</resources>

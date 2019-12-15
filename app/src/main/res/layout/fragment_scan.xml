@@ -41,6 +41,20 @@
 
     </androidx.cardview.widget.CardView>
 
+    <ImageView
+        android:id="@+id/button_reset"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="@+id/button_scan"
+        app:layout_constraintDimensionRatio="1"
+        app:layout_constraintEnd_toStartOf="@+id/button_scan"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/card_preview"
+        app:srcCompat="@drawable/avd_restart" />
+
     <Button
         android:id="@+id/button_scan"
         android:layout_width="wrap_content"
@@ -48,22 +62,22 @@
         android:layout_marginTop="24dp"
         app:layout_constraintEnd_toStartOf="@+id/button_switch_flash"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/button_reset"
         app:layout_constraintTop_toBottomOf="@+id/card_preview" />
 
     <ImageView
         android:id="@+id/button_switch_flash"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginTop="24dp"
         android:scaleType="fitCenter"
-        app:srcCompat="@drawable/asl_trimclip_flashlight"
         app:layout_constraintBottom_toBottomOf="@+id/button_scan"
         app:layout_constraintDimensionRatio="1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/button_scan"
-        app:layout_constraintTop_toBottomOf="@+id/card_preview" />
+        app:layout_constraintTop_toBottomOf="@+id/card_preview"
+        app:srcCompat="@drawable/asl_trimclip_flashlight" />
 
 
     <androidx.constraintlayout.widget.Guideline
@@ -92,9 +106,24 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/statusViewScroller"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end_preview"
         app:layout_constraintStart_toStartOf="@+id/guideline_start_preview"
         app:layout_constraintTop_toBottomOf="@+id/button_scan" />
+
+    <com.jorkoh.rubiksscanandsolve.scan.utils.InkPageIndicator
+        android:id="@+id/statusViewScroller"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_end_preview"
+        app:layout_constraintStart_toStartOf="@+id/guideline_start_preview"
+        app:mis_animationDuration="320"
+        app:mis_currentPageIndicatorColor="#FAFAFA"
+        app:mis_dotDiameter="10dp"
+        app:mis_dotGap="18dp"
+        app:mis_pageCount="3"
+        app:mis_pageIndicatorColor="#686868" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

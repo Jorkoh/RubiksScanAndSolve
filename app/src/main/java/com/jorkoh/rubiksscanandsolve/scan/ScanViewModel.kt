@@ -21,6 +21,7 @@ class ScanViewModel : ViewModel() {
         PRE_SECOND_SCAN,
         SECOND_SCAN,
         SECOND_PHOTO,
+        FINDING_SOLUTION,
         FINISHED
     }
 
@@ -94,6 +95,7 @@ class ScanViewModel : ViewModel() {
                     if (initialState == null) {
                         _scanStage.postValue(PRE_FIRST_SCAN)
                     } else {
+                        _scanStage.postValue(FINDING_SOLUTION)
                         val solution = Solution(initialState)
                         if (solution.isError()) {
                             _scanStage.postValue(PRE_FIRST_SCAN)
