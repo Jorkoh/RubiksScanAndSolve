@@ -53,7 +53,8 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/card_preview"
-        app:srcCompat="@drawable/avd_restart" />
+        app:srcCompat="@drawable/avd_restart"
+        android:contentDescription="@string/scanner_reset_content_description" />
 
     <Button
         android:id="@+id/button_scan"
@@ -77,7 +78,8 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/button_scan"
         app:layout_constraintTop_toBottomOf="@+id/card_preview"
-        app:srcCompat="@drawable/asl_trimclip_flashlight" />
+        app:srcCompat="@drawable/asl_trimclip_flashlight"
+        android:contentDescription="@string/scanner_enable_flashlight_content_description" />
 
 
     <androidx.constraintlayout.widget.Guideline
@@ -122,7 +124,7 @@
         app:mis_animationDuration="320"
         app:mis_currentPageIndicatorColor="#FAFAFA"
         app:mis_dotDiameter="10dp"
-        app:mis_dotGap="18dp"
+        app:mis_dotGap="20dp"
         app:mis_pageCount="3"
         app:mis_pageIndicatorColor="#686868" />
 

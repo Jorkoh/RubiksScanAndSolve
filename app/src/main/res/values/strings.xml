@@ -12,14 +12,17 @@
 
     <string name="start_scanner" translatable="true">START SCANNER</string>
     <string name="stop_scanner" translatable="true">STOP SCANNER</string>
+    <string name="scanner_reset_content_description" translatable="true">Reset scan progress</string>
+    <string name="scanner_enable_flashlight_content_description" translatable="true">Enable flashlight</string>
+    <string name="scanner_disable_flashlight_content_description" translatable="true">Enable flashlight</string>
 
     <string name="explanation_first_scan_step" translatable="true">Start with any three faces, make sure that the edges of the cube follow the guideline. Consider enabling the flash to offset bad lightning conditions.</string>
     <string name="explanation_second_scan_step" translatable="true">Reorient the cube to scan the three faces not scanned on the first step. The face located at the top on the first step should now be placed at the bottom.</string>
     <string name="explanation_find_solution_step" translatable="true">Finding a solution…</string>
 
-    <string name="control_reset_content_description" translatable="true">Reset</string>
-    <string name="control_previous_content_description" translatable="true">Previous step</string>
-    <string name="control_pause_content_description" translatable="true">Pause solve</string>
-    <string name="control_play_content_description" translatable="true">Play solve</string>
-    <string name="control_next_content_description" translatable="true">Next step</string>
+    <string name="solve_reset_content_description" translatable="true">Reset</string>
+    <string name="solve_previous_content_description" translatable="true">Previous step</string>
+    <string name="solve_pause_content_description" translatable="true">Pause solve</string>
+    <string name="solve_play_content_description" translatable="true">Play solve</string>
+    <string name="solve_next_content_description" translatable="true">Next step</string>
 </resources>

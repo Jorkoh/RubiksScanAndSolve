@@ -37,7 +37,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:contentDescription="@string/control_reset_content_description"
+            android:contentDescription="@string/solve_reset_content_description"
             android:src="@drawable/ic_replay_24dp" />
 
         <ImageButton
@@ -45,7 +45,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:contentDescription="@string/control_previous_content_description"
+            android:contentDescription="@string/solve_previous_content_description"
             android:src="@drawable/ic_previous_24dp" />
 
         <ImageButton
@@ -53,7 +53,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:contentDescription="@string/control_pause_content_description"
+            android:contentDescription="@string/solve_pause_content_description"
             android:src="@drawable/ic_pause_24dp" />
 
         <ImageButton
@@ -61,7 +61,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:contentDescription="@string/control_play_content_description"
+            android:contentDescription="@string/solve_play_content_description"
             android:src="@drawable/ic_play_24dp" />
 
         <ImageButton
@@ -69,7 +69,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:contentDescription="@string/control_next_content_description"
+            android:contentDescription="@string/solve_next_content_description"
             android:src="@drawable/ic_next_24dp" />
 
     </LinearLayout>

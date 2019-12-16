@@ -13,7 +13,6 @@ import android.view.LayoutInflater
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.*
@@ -160,6 +159,13 @@ class ScanFragment : Fragment() {
         scanVM.flashEnabled.observe(viewLifecycleOwner, Observer { flashEnabled ->
             preview?.enableTorch(flashEnabled)
             button_switch_flash.isActivated = flashEnabled
+            button_switch_flash.contentDescription = getString(
+                if (flashEnabled) {
+                    R.string.scanner_disable_flashlight_content_description
+                } else {
+                    R.string.scanner_enable_flashlight_content_description
+                }
+            )
         })
     }
 

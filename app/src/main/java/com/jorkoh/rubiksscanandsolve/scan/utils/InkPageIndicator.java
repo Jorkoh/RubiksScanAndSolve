@@ -117,6 +117,7 @@ public class InkPageIndicator extends View implements View.OnAttachStateChangeLi
         gap = typedArray.getDimensionPixelSize(R.styleable.InkPageIndicator_mis_dotGap, DEFAULT_GAP * density);
         animDuration = (long) typedArray.getInteger(R.styleable.InkPageIndicator_mis_animationDuration, DEFAULT_ANIM_DURATION);
         pageCount = (int) typedArray.getInteger(R.styleable.InkPageIndicator_mis_pageCount, DEFAULT_PAGE_COUNT);
+        dotCenterX = new float[pageCount];
         animHalfDuration = animDuration / 2;
         unselectedColour = typedArray.getColor(R.styleable.InkPageIndicator_mis_pageIndicatorColor, DEFAULT_UNSELECTED_COLOUR);
         int selectedColour = typedArray.getColor(R.styleable.InkPageIndicator_mis_currentPageIndicatorColor, DEFAULT_SELECTED_COLOUR);
