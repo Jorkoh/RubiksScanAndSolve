@@ -1,4 +1,4 @@
-﻿<h1 align="center"> Rubik’s Scan & Solve </h1> <br>
+﻿<h1 align="center"> Rubik’s Scan & Solve </h1>
 
 <p align="center">
   Easily solve your cube a couple of minutes. Built with Kotlin and ❤️
@@ -22,9 +22,15 @@ Some technologies used to develop Rubik’s Scan & Solve:
 
 * Detect 3 faces at the same time making the scanning process faster and less error-prone.
 * Supports any\* color configuration by grouping the facelets through kMeans instead of hardcoded color ranges.
-* Continuous high-performance scanning through CameraX image analysis use case, directly allocated memory buffers and native C++.
+* Continuous high-performance scanning through CameraX image analysis, directly allocated memory buffers and native C++ code.
 
 \* <sub>Results may vary depending on lightning conditions and the condition of the stickers.</sub>
+
+## Video demo
+
+  https://user-images.githubusercontent.com/27740534/133829552-95af6cc4-d60d-4177-bdea-20d8c729e210.mp4
+ 
+
 ## Acknowledgments
 
 Stuff that made this project possible:
