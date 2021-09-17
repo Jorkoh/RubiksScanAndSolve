@@ -1,4 +1,4 @@
-﻿<h1 align="center"> Rubik’s Scan & Solve </h1>
+﻿<h1 align="center"> Rubik’s Scan & Solve </h1> <br>
 
 <p align="center">
   Easily solve your cube a couple of minutes. Built with Kotlin and ❤️
